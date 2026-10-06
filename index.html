@@ -374,6 +374,15 @@
   .thanks-link { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: var(--teal); text-decoration: none; border-bottom: 1px solid currentColor; }
   .thanks-actions .btn { width: 100%; }
 
+  /* ---------- Background upload status pill ---------- */
+  .upl-pill { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 70; display: inline-flex; align-items: center; gap: 10px; max-width: calc(100vw - 32px); padding: 11px 16px 11px 14px; border-radius: 999px; border: 1px solid var(--teal-tint-strong); background: rgba(15,22,20,0.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--ink); font: 600 13px 'Manrope', sans-serif; text-align: left; white-space: nowrap; box-shadow: 0 14px 34px -12px rgba(0,0,0,0.7); animation: toastIn .3s var(--ease); cursor: default; }
+  .upl-pill[hidden] { display: none; }
+  .upl-dot { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(23,230,196,0.25); border-top-color: var(--teal); animation: spin .8s linear infinite; }
+  .upl-pill.done { border-color: var(--teal); }
+  .upl-pill.done .upl-dot { animation: none; border: 0; background: var(--teal); box-shadow: 0 0 12px rgba(23,230,196,0.7); }
+  .upl-pill.fail { border-color: rgba(255,138,149,0.5); cursor: pointer; }
+  .upl-pill.fail .upl-dot { animation: none; border: 0; background: #ff8a95; }
+
   /* ---------- Toast ---------- */
   .toast {
     position: fixed; left: 16px; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 60;
@@ -702,6 +711,7 @@
 </footer>
 
 <div class="toast" id="capture-toast" role="status" aria-live="polite"></div>
+<button class="upl-pill" id="upl-pill" type="button" role="status" aria-live="polite" hidden><span class="upl-dot" aria-hidden="true"></span><span class="upl-text"></span></button>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo" hidden>
   <button class="lb-btn lb-close" type="button" aria-label="Close" onclick="closeLightbox()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -776,75 +786,101 @@ document.querySelectorAll(".flip-card").forEach(function (card) {
 // Soundcheck frame (assets/frame.js), which is posted to UPLOAD_URL. Photos
 // wait for approval (unless Auto-approve is on) before appearing in the album.
 // No sign-in needed on the guest's side.
-var uploading = false;
+// Guests never wait for the upload itself: each photo is framed on the phone
+// (about a second), the thank-you card appears straight away, and the upload
+// runs in the background with a small status pill. Failed uploads stay
+// queued and the pill offers a retry.
+var framing = false, queue = [], sending = false, sentOk = 0, sentLive = 0, pillTimer = null;
 
 function handlePhotos(input) {
   var files = Array.prototype.slice.call(input.files || []);
   input.value = "";
   if (!files.length) return;
-  if (uploading) { showToast("Hang on, still uploading your last photo…", true); return; }
-  uploading = true;
+  if (framing) { showToast("One moment, still preparing your last photo…"); return; }
+  framing = true;
   var vf = document.getElementById("viewfinder");
   var vfTitle = vf.querySelector(".vf-title"), vfSub = vf.querySelector(".vf-sub");
   var idleTitle = vfTitle.textContent, idleSub = vfSub.textContent;
   vf.classList.add("busy");
-  var done = 0, failed = 0, live = 0, lastError = "";
+  var thanked = false;
   (function next(i) {
     if (i >= files.length) {
-      uploading = false;
+      framing = false;
       vf.classList.remove("busy");
       vfTitle.textContent = idleTitle; vfSub.textContent = idleSub;
       setRing(vf, 0);
-      if (done) { vf.classList.remove("flash"); void vf.offsetWidth; vf.classList.add("flash"); }
-      if (done) {
-        document.getElementById("capture-toast").classList.remove("show");
-        showThanks(done, failed, live);
-      } else {
-        showToast("Couldn't upload your photo" + (files.length > 1 ? "s" : "") + ". Check your connection and try again." + (lastError ? " (" + lastError + ")" : ""));
-      }
       return;
     }
-    var of = files.length > 1 ? " (" + (i + 1) + " of " + files.length + ")" : "";
-    vfTitle.textContent = "Framing your photo" + of;
+    vfTitle.textContent = "Framing your photo" + (files.length > 1 ? " (" + (i + 1) + " of " + files.length + ")" : "");
     vfSub.textContent = "One moment…";
-    setRing(vf, 0.06);
-    var prog = null;
+    setRing(vf, (i + 0.5) / files.length);
     loadPhoto(files[i])
-      .then(function (img) {
-        return window.makeSoundcheckFrame(img).then(function (framed) {
-          // Only the branded photo is sent: half the data, so uploads stay quick on slow uplinks
-          var body = { action: "upload", framed: framed.dataUrl.split(",")[1], w: framed.w, h: framed.h };
-          vfTitle.textContent = "Adding to tonight's album" + of;
-          prog = fakeProgress(vf, vfSub, body.framed.length / 1024);
-          return postJSON(body);
-        });
+      .then(function (img) { return window.makeSoundcheckFrame(img); })
+      .then(function (framed) {
+        queue.push({ action: "upload", framed: framed.dataUrl.split(",")[1], w: framed.w, h: framed.h });
+        setRing(vf, (i + 1) / files.length);
+        if (!thanked) {
+          thanked = true;
+          vf.classList.remove("flash"); void vf.offsetWidth; vf.classList.add("flash");
+          showThanks(files.length);
+        }
+        pump();
       })
-      .then(function (res) {
-        if (prog) prog.finish();
-        if (res && res.ok) { done++; if (res.approved) live++; } else { failed++; lastError = (res && res.error) || ""; }
-      })
-      .catch(function (e) { if (prog) prog.finish(); failed++; lastError = (e && e.message) || ""; })
-      .then(function () { setTimeout(function () { next(i + 1); }, 250); });
+      .catch(function () { showToast("That photo couldn't be opened. Please try another one."); })
+      .then(function () { next(i + 1); });
   })(0);
 }
 
-// Upload progress can't be measured on a "simple" cross-site request, so the
-// ring eases towards 95% over the expected time for this payload and
-// completes when the server answers.
+function pump() {
+  if (sending) return;
+  if (!queue.length) { pill(sentOk ? "done" : "hide"); return; }
+  sending = true;
+  pill("up");
+  postJSON(queue[0])
+    .then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || "Upload failed");
+      queue.shift();
+      sentOk++;
+      if (res.approved) { sentLive++; loadAlbum(); }
+      sending = false;
+      pump();
+    })
+    .catch(function (e) {
+      sending = false;
+      pill("fail", e && e.message);
+    });
+}
+
+// Small status pill: uploading -> done (or failed, tap to retry)
+function pill(state, detail) {
+  var el = document.getElementById("upl-pill");
+  clearTimeout(pillTimer);
+  el.className = "upl-pill " + state;
+  el.hidden = state === "hide";
+  var txt = el.querySelector(".upl-text");
+  if (state === "up") {
+    txt.textContent = "Uploading" + (queue.length > 1 ? " " + queue.length + " photos" : "") + "… keep this page open";
+  } else if (state === "done") {
+    txt.textContent = sentLive === sentOk
+      ? "✓ " + (sentOk > 1 ? sentOk + " photos" : "Photo") + " added to the album"
+      : "✓ " + (sentOk > 1 ? sentOk + " photos" : "Photo") + " sent for approval";
+    sentOk = 0; sentLive = 0;
+    pillTimer = setTimeout(function () { el.hidden = true; }, 5000);
+  } else if (state === "fail") {
+    txt.textContent = "Upload failed" + (detail ? " (" + detail + ")" : "") + " · Tap to retry";
+  }
+}
+document.getElementById("upl-pill").addEventListener("click", function () {
+  if (this.classList.contains("fail")) pump();
+});
+// Warn before leaving while photos are still uploading
+window.addEventListener("beforeunload", function (e) {
+  if (queue.length) { e.preventDefault(); e.returnValue = ""; }
+});
+
 function setRing(vf, p) {
   var c = vf.querySelector(".vf-ring circle");
   if (c) c.style.strokeDashoffset = String(301.6 * (1 - p));
-}
-function fakeProgress(vf, label, kb) {
-  var expected = 8000 + kb * 15, start = Date.now(), stop = false; // ~65 KB/s uplink plus server time
-  (function tick() {
-    if (stop) return;
-    var p = 0.08 + 0.84 * (1 - Math.exp(-(Date.now() - start) / (expected / 2.2)));
-    setRing(vf, p);
-    label.textContent = p > 0.88 ? "Saving to the album…" : "Sending… " + Math.round(p * 100) + "%";
-    requestAnimationFrame(tick);
-  })();
-  return { finish: function () { stop = true; setRing(vf, 1); label.textContent = "Done 100%"; } };
 }
 
 // POST to the Apps Script, retrying once if the network drops or Google
@@ -883,17 +919,11 @@ function loadPhoto(file) {
   });
 }
 
-
-
-function showThanks(done, failed, live) {
-  // live: photos that went straight into the album because Auto-approve is on
-  document.getElementById("thanks-msg").textContent = live === done
-    ? (done === 1 ? "Your photo is now in tonight's album." : "Your " + done + " photos are now in tonight's album.")
-    : (done === 1 ? "Your photo has been sent to tonight's album." : "Your " + done + " photos have been sent to tonight's album.") + " It'll appear once our team approves it.";
-  if (live) loadAlbum();
-  var note = document.getElementById("thanks-note");
-  note.hidden = !failed;
-  if (failed) note.textContent = failed + " photo" + (failed > 1 ? "s" : "") + " couldn't upload. You can try " + (failed > 1 ? "them" : "it") + " again.";
+function showThanks(count) {
+  document.getElementById("thanks-msg").textContent = count > 1
+    ? "Your " + count + " photos are on their way to tonight's album."
+    : "Your photo is on its way to tonight's album.";
+  document.getElementById("thanks-note").hidden = true;
   var t = document.getElementById("thanks");
   t.hidden = false;
   t.querySelector(".btn-ghost").focus({ preventScroll: true });

@@ -75,6 +75,10 @@
   .acts { display: flex; gap: 6px; padding: 8px; }
   .acts button { flex: 1; min-height: 40px; padding: 0 6px; border-radius: 10px; border: 0; font-weight: 800; font-size: 13px; white-space: nowrap; cursor: pointer; }
   .acts .ok { flex: 1.4; }
+  .card { position: relative; }
+  .del { display: grid; place-items: center; border: 1px solid rgba(255,138,149,0.4); background: rgba(10,6,7,0.72); color: var(--red); cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .card > .del { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; z-index: 2; }
+  .view .acts .del { flex: 0 0 52px; min-height: 50px; border-radius: 10px; }
   .ok { background: var(--teal); color: #031210; }
   .no { background: var(--red-bg); color: var(--red); }
   .acts .no:only-child, .acts .ok:only-child { flex: 1; }
@@ -184,7 +188,7 @@ function render() {
     b.onclick = function () { openView(it); };
     var meta = document.createElement("div");
     meta.className = "meta"; meta.textContent = ago(it.t);
-    card.appendChild(b); card.appendChild(meta); card.appendChild(actions(it));
+    card.appendChild(b); card.appendChild(meta); card.appendChild(actions(it)); card.appendChild(delBtn(it));
     grid.appendChild(card);
   });
   var empty = document.getElementById("empty");
@@ -198,6 +202,13 @@ function actions(it) {
   if (it.s !== "a") wrap.appendChild(btn("ok", it.s === "h" ? "Restore" : "✓ Approve", function () { review(it, "a"); }));
   if (it.s !== "h") wrap.appendChild(btn("no", it.s === "a" ? "Hide from album" : "✕ Hide", function () { review(it, "h"); }));
   return wrap;
+}
+function delBtn(it) {
+  var d = btn("del", "", function () { removePhoto(it); });
+  d.setAttribute("aria-label", "Delete photo");
+  d.title = "Delete photo";
+  d.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  return d;
 }
 function btn(cls, label, fn) {
   var b = document.createElement("button");
@@ -258,10 +269,36 @@ autoBox.addEventListener("change", function () {
     .then(function () { sw.classList.remove("busy"); });
 });
 
+// Delete: removes it from the album everywhere and moves the file to the Drive bin
+function removePhoto(it) {
+  if (!confirm("Delete this photo? It disappears from the album and big screen, and the file moves to the Google Drive bin (restorable for 30 days).")) return;
+  var i = items.indexOf(it);
+  if (i >= 0) items.splice(i, 1);
+  var card = document.querySelector('.card[data-id="' + it.id + '"]');
+  if (card) card.classList.add("leaving");
+  closeView();
+  setTimeout(render, 220);
+  toast("Deleted");
+  fetch(UPLOAD_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "delete", pin: pin, id: it.id })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (res) { if (!res.ok) throw new Error(res.error); })
+    .catch(function (e) {
+      if (i >= 0) items.splice(i, 0, it);
+      render();
+      var msg = e.message === "Bad request" ? "Update the Google Script to use Delete" : (e.message || "try again");
+      toast("Didn't delete: " + msg);
+    });
+}
+
 function openView(it) {
   viewing = it;
   document.getElementById("view-img").src = thumb(it.id, 1600);
   var a = actions(it);
+  a.appendChild(delBtn(it));
   a.id = "view-acts";
   document.getElementById("view-acts").replaceWith(a);
   document.getElementById("view").hidden = false;
