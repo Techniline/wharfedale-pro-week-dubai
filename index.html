@@ -101,15 +101,13 @@
   .tb-wp { height: 50px; width: auto; flex: none; }
   .tb-rule { width: 1px; height: 36px; flex: none; background: linear-gradient(transparent, var(--hairline-strong) 20%, var(--hairline-strong) 80%, transparent); }
   .tb-event { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .sc-title { font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 18px; line-height: 1.1; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; white-space: nowrap; }
-  .sc-title em { font-weight: 400; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 50%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
-  .sc-host { display: inline-flex; align-items: center; gap: 7px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); white-space: nowrap; }
-  .sc-host img { height: 12px; width: auto; display: inline-block; }
+  .sc-host { display: inline-flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); white-space: nowrap; }
+  .sc-host img { height: 16px; width: auto; display: inline-block; }
   .pill { margin-left: auto; font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--teal); border: 1px solid var(--teal-tint-strong); border-radius: 999px; padding: 6px 12px; white-space: nowrap; flex: none; }
   @media (max-width: 639px) { .pill { display: none; } }
-  @media (max-width: 399px) { .topbar-inner { padding-left: 18px; padding-right: 18px; gap: 12px; } .tb-wp { height: 46px; } .sc-title { font-size: 16.5px; } }
-  @media (max-width: 349px) { .topbar-inner { padding-left: 14px; padding-right: 14px; gap: 10px; } .tb-wp { height: 42px; } .sc-title { font-size: 15px; } .sc-host { letter-spacing: 0.14em; } }
-  @media (min-width: 640px) { .tb-wp { height: 58px; } .tb-rule { height: 42px; } .sc-title { font-size: 22px; } .sc-host { font-size: 10px; } .sc-host img { height: 13px; } .topbar-inner { gap: 20px; } }
+  @media (max-width: 399px) { .topbar-inner { padding-left: 18px; padding-right: 18px; gap: 12px; } .tb-wp { height: 46px; } }
+  @media (max-width: 349px) { .topbar-inner { padding-left: 14px; padding-right: 14px; gap: 10px; } .tb-wp { height: 42px; } .sc-host { letter-spacing: 0.14em; } }
+  @media (min-width: 640px) { .tb-wp { height: 58px; } .tb-rule { height: 42px; } .sc-host { font-size: 10.5px; } .sc-host img { height: 18px; } .topbar-inner { gap: 20px; } }
 
   /* ---------- Hero ---------- */
   .hero { position: relative; min-height: min(92svh, 860px); display: flex; align-items: center; padding: 72px 0 150px; overflow: hidden; isolation: isolate; }
@@ -399,7 +397,6 @@
     <img class="tb-wp" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro" width="667" height="540">
     <span class="tb-rule" aria-hidden="true"></span>
     <div class="tb-event">
-      <a class="sc-title" href="#">Welcome to Soundcheck <em>2026</em></a>
       <span class="sc-host">Hosted by <img src="assets/techniline.png" alt="Techniline" width="472" height="84"></span>
     </div>
     <span class="pill">Invitation only</span>
@@ -410,7 +407,7 @@
   <img class="hero-emblem" src="assets/wharfedale-mark.svg" alt="" aria-hidden="true">
   <div class="wrap-wide" style="width:100%">
     <div class="kicker reveal"><span class="dot"></span>Wharfedale Pro Week · Dubai</div>
-    <h1 class="reveal d1">Welcome to Wharfedale Pro <em>Live</em></h1>
+    <h1 class="reveal d1">Welcome to Soundcheck <em>2026</em></h1>
     <p class="tagline reveal d2">An intimate, invitation only evening with the Wharfedale Pro team, because some conversations are better had in person, over good food, with people who matter.</p>
     <div class="event-meta reveal d3">
       <div><span>Date</span><strong>14 October 2026</strong></div>
