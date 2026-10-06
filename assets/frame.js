@@ -71,23 +71,22 @@
     return s2;
   }
 
-  function pad3(n) { return ('00' + n).slice(-3); }
-
-  function dubaiTime(d) {
+  // "14 OCT 2026" and "10:43 PM" in Dubai time, whatever the phone's own time zone
+  function dubaiStamp(d, sep) {
     try {
-      return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Dubai' }).format(d);
+      var day = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Dubai' }).format(d);
+      var time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Dubai' }).format(d);
+      return (day + sep + time).toUpperCase();
     } catch (e) {
+      var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       var h = d.getHours(), m = d.getMinutes();
-      return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM');
+      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + sep +
+        ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM');
     }
   }
 
-  /**
-   * Returns a Promise of { dataUrl, w, h } for the branded JPEG.
-   * opts.no: the photo's number in tonight's album (optional)
-   */
-  window.makeSoundcheckFrame = function (photo, opts) {
-    opts = opts || {};
+  /** Returns a Promise of { dataUrl, w, h } for the branded JPEG. */
+  window.makeSoundcheckFrame = function (photo) {
     return loadAssets().then(function (a) {
       var logo = a[0], tl = a[1];
       var nw = photo.naturalWidth, nh = photo.naturalHeight;
@@ -181,9 +180,9 @@
       ctx.fillRect(x, mid - bar * 0.25, Math.max(1, W * 0.0015), bar * 0.5);
       x += W * 0.026;
 
-      // ---- right block: "No. 024 / 9:41 PM", HOSTED BY, Techniline
+      // ---- right block: "14 OCT 2026 / 10:43 PM", HOSTED BY, Techniline
       var dot = String.fromCharCode(183); // middle dot, kept as a code so the file stays ASCII
-      var meta = (opts.no ? 'NO. ' + pad3(opts.no) + '  ' + dot + '  ' : '') + dubaiTime(new Date()).toUpperCase();
+      var meta = dubaiStamp(new Date(), '  ' + dot + '  ');
       var hSize = W * (portrait ? 0.016 : 0.0115), mSize = hSize * 1.05;
       var tlh = W * (portrait ? 0.032 : 0.024), tlw = tlh * tl.naturalWidth / tl.naturalHeight;
       var right = W - pad, gap = W * 0.008;
