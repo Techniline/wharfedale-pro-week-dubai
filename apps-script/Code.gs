@@ -144,7 +144,7 @@ function approvedList_() {
     .filter(function (it) { return it.s === 'a'; })
     .sort(function (a, b) { return b.t - a.t; })
     .map(function (it) { return { id: it.id, w: it.w, h: it.h, t: it.t, at: it.at }; });
-  cache.put(LIST_CACHE_KEY, JSON.stringify(list), 10);
+  cache.put(LIST_CACHE_KEY, JSON.stringify(list), 30);
   return list;
 }
 
@@ -177,19 +177,26 @@ function withLock_(fn) {
   try { fn(); } finally { lock.releaseLock(); }
 }
 
-function readIndex_() {
-  var files = getFolder_().getFilesByName(INDEX_NAME);
-  if (!files.hasNext()) {
-    getFolder_().createFile(INDEX_NAME, JSON.stringify({ items: [] }), 'application/json');
-    return { items: [] };
+// The album list lives in a JSON file in Drive. Its file ID is remembered in
+// Script Properties so each request opens it directly instead of searching.
+function indexFile_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('INDEX_ID');
+  if (id) {
+    try { return DriveApp.getFileById(id); } catch (e) { /* deleted; find or recreate */ }
   }
-  return JSON.parse(files.next().getBlob().getDataAsString());
+  var files = getFolder_().getFilesByName(INDEX_NAME);
+  var file = files.hasNext() ? files.next() : getFolder_().createFile(INDEX_NAME, JSON.stringify({ items: [] }), 'application/json');
+  props.setProperty('INDEX_ID', file.getId());
+  return file;
+}
+
+function readIndex_() {
+  return JSON.parse(indexFile_().getBlob().getDataAsString());
 }
 
 function writeIndex_(idx) {
-  var files = getFolder_().getFilesByName(INDEX_NAME);
-  if (files.hasNext()) files.next().setContent(JSON.stringify(idx));
-  else getFolder_().createFile(INDEX_NAME, JSON.stringify(idx), 'application/json');
+  indexFile_().setContent(JSON.stringify(idx));
 }
 
 function getFolder_() {
@@ -203,10 +210,19 @@ function getFolder_() {
   return folder;
 }
 
+// Framed / Originals folders, remembered the same way
 function getSubFolder_(name) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'FOLDER_' + name.toUpperCase();
+  var id = props.getProperty(key);
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (e) { /* deleted; find or recreate */ }
+  }
   var root = getFolder_();
   var it = root.getFoldersByName(name);
-  return it.hasNext() ? it.next() : root.createFolder(name);
+  var folder = it.hasNext() ? it.next() : root.createFolder(name);
+  props.setProperty(key, folder.getId());
+  return folder;
 }
 
 function json_(obj) {

@@ -284,7 +284,12 @@
   .viewfinder:active .shutter-core { transform: scale(0.9); }
   /* uploading: spinning arc around the shutter */
   .viewfinder.busy .shutter { border-color: rgba(255,255,255,0.18); }
-  .viewfinder.busy .shutter::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--teal); border-right-color: var(--teal); animation: spin .9s linear infinite; }
+  /* upload progress ring around the shutter */
+  .vf-ring { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); transform: rotate(-90deg); opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .vf-ring circle { fill: none; stroke: var(--teal); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 301.6; stroke-dashoffset: 301.6; filter: drop-shadow(0 0 4px rgba(23,230,196,0.8)); }
+  .viewfinder.busy .vf-ring { opacity: 1; }
+  .viewfinder.busy .shutter::before { animation: none; opacity: 0; }
+  .viewfinder.busy .vf-sub { color: var(--teal); font-variant-numeric: tabular-nums; }
   .viewfinder.busy .shutter-core { opacity: 0.55; }
   @keyframes spin { to { transform: rotate(360deg); } }
   /* camera flash on a successful upload */
@@ -581,7 +586,7 @@
         <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
         <img class="vf-emblem" src="assets/wharfedale-mark.svg" alt="" aria-hidden="true">
         <span class="vf-center">
-          <span class="shutter"><span class="shutter-core"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg></span></span>
+          <span class="shutter"><svg class="vf-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48"/></svg><span class="shutter-core"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg></span></span>
           <span class="vf-title">Capture and add to our photo album</span>
           <span class="vf-sub">Tap to open your camera</span>
         </span>
@@ -729,7 +734,7 @@
   </div>
 </div>
 
-<script src="assets/frame.js?v=4"></script>
+<script src="assets/frame.js?v=5"></script>
 <script>
 function togglePanel(id) {
   var panel = document.getElementById(id);
@@ -780,46 +785,94 @@ function handlePhotos(input) {
   if (uploading) { showToast("Hang on, still uploading your last photo…", true); return; }
   uploading = true;
   var vf = document.getElementById("viewfinder");
+  var vfTitle = vf.querySelector(".vf-title"), vfSub = vf.querySelector(".vf-sub");
+  var idleTitle = vfTitle.textContent, idleSub = vfSub.textContent;
   vf.classList.add("busy");
-  var done = 0, failed = 0, live = 0;
+  var done = 0, failed = 0, live = 0, lastError = "";
   (function next(i) {
     if (i >= files.length) {
       uploading = false;
       vf.classList.remove("busy");
+      vfTitle.textContent = idleTitle; vfSub.textContent = idleSub;
+      setRing(vf, 0);
       if (done) { vf.classList.remove("flash"); void vf.offsetWidth; vf.classList.add("flash"); }
       if (done) {
         document.getElementById("capture-toast").classList.remove("show");
         showThanks(done, failed, live);
       } else {
-        showToast("Couldn't upload your photo" + (files.length > 1 ? "s" : "") + ". Check your connection and try again.");
+        showToast("Couldn't upload your photo" + (files.length > 1 ? "s" : "") + ". Check your connection and try again." + (lastError ? " (" + lastError + ")" : ""));
       }
       return;
     }
-    showToast(files.length > 1 ? "Uploading photo " + (i + 1) + " of " + files.length + "…" : "Uploading your photo…", true);
+    var of = files.length > 1 ? " (" + (i + 1) + " of " + files.length + ")" : "";
+    vfTitle.textContent = "Framing your photo" + of;
+    vfSub.textContent = "One moment…";
+    setRing(vf, 0.06);
+    var prog = null;
     loadPhoto(files[i])
       .then(function (img) {
         var original = shrinkImage(img).split(",")[1];
         return window.makeSoundcheckFrame(img).then(function (framed) {
-          return postJSON({ action: "upload", framed: framed.dataUrl.split(",")[1], original: original, w: framed.w, h: framed.h });
+          var body = { action: "upload", framed: framed.dataUrl.split(",")[1], original: original, w: framed.w, h: framed.h };
+          vfTitle.textContent = "Adding to tonight's album" + of;
+          prog = fakeProgress(vf, vfSub, (body.framed.length + body.original.length) / 1024);
+          return postJSON(body);
         }).then(function (res) {
           // An older backend that doesn't know framed uploads yet: send the plain photo instead
           if (res && !res.ok && res.error === "Bad request") return postJSON({ data: original, mimeType: "image/jpeg" });
           return res;
         });
       })
-      .then(function (res) { if (res && res.ok) { done++; if (res.approved) live++; } else failed++; })
-      .catch(function () { failed++; })
-      .then(function () { next(i + 1); });
+      .then(function (res) {
+        if (prog) prog.finish();
+        if (res && res.ok) { done++; if (res.approved) live++; } else { failed++; lastError = (res && res.error) || ""; }
+      })
+      .catch(function (e) { if (prog) prog.finish(); failed++; lastError = (e && e.message) || ""; })
+      .then(function () { setTimeout(function () { next(i + 1); }, 250); });
   })(0);
 }
 
-function postJSON(body) {
+// Upload progress can't be measured on a "simple" cross-site request, so the
+// ring eases towards 95% over the expected time for this payload and
+// completes when the server answers.
+function setRing(vf, p) {
+  var c = vf.querySelector(".vf-ring circle");
+  if (c) c.style.strokeDashoffset = String(301.6 * (1 - p));
+}
+function fakeProgress(vf, label, kb) {
+  var expected = 2500 + kb * 6, start = Date.now(), stop = false; // ~170 KB/s plus server time
+  (function tick() {
+    if (stop) return;
+    var p = 0.08 + 0.87 * (1 - Math.exp(-(Date.now() - start) / (expected / 2.2)));
+    setRing(vf, p);
+    label.textContent = (p > 0.9 ? "Almost there… " : "Sending… ") + Math.round(p * 100) + "%";
+    requestAnimationFrame(tick);
+  })();
+  return { finish: function () { stop = true; setRing(vf, 1); label.textContent = "Done 100%"; } };
+}
+
+// POST to the Apps Script, retrying once if the network drops or Google
+// answers with an error page instead of JSON.
+function postJSON(body, attempt) {
+  attempt = attempt || 1;
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 60000) : null;
   return fetch(UPLOAD_URL, {
     method: "POST",
     // text/plain keeps this a "simple" request, which Apps Script accepts cross-origin
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(body)
-  }).then(function (r) { return r.json(); });
+    body: JSON.stringify(body),
+    signal: ctrl ? ctrl.signal : undefined
+  })
+    .then(function (r) { return r.text(); })
+    .then(function (t) {
+      try { return JSON.parse(t); } catch (e) { throw new Error("Server busy"); }
+    })
+    .catch(function (e) {
+      if (attempt < 2) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return postJSON(body, 2); });
+      throw new Error(e && e.name === "AbortError" ? "Timed out" : (e && e.message) || "Network error");
+    })
+    .then(function (res) { if (timer) clearTimeout(timer); return res; });
 }
 
 // Decode a picked file; browsers apply its EXIF rotation, so it comes out upright
@@ -834,13 +887,13 @@ function loadPhoto(file) {
 }
 
 function shrinkImage(img, maxSide) {
-  maxSide = maxSide || 2000;
+  maxSide = maxSide || 1600;
   var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
   var c = document.createElement("canvas");
   c.width = Math.round(img.naturalWidth * scale);
   c.height = Math.round(img.naturalHeight * scale);
   c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.85);
+  return c.toDataURL("image/jpeg", 0.82);
 }
 
 function showThanks(done, failed, live) {
