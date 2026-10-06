@@ -729,7 +729,7 @@
   </div>
 </div>
 
-<script src="assets/frame.js"></script>
+<script src="assets/frame.js?v=3"></script>
 <script>
 function togglePanel(id) {
   var panel = document.getElementById(id);
@@ -798,9 +798,12 @@ function handlePhotos(input) {
     showToast(files.length > 1 ? "Uploading photo " + (i + 1) + " of " + files.length + "…" : "Uploading your photo…", true);
     loadPhoto(files[i])
       .then(function (img) {
-        var original = shrinkImage(img).split(",")[1];
-        return window.makeSoundcheckFrame(img).then(function (framed) {
-          return postJSON({ action: "upload", framed: framed.dataUrl.split(",")[1], original: original, w: framed.w, h: framed.h });
+        var original = shrinkImage(img).split(",")[1], no = 0;
+        return getTicket().then(function (n) {
+          no = n;
+          return window.makeSoundcheckFrame(img, { no: n });
+        }).then(function (framed) {
+          return postJSON({ action: "upload", framed: framed.dataUrl.split(",")[1], original: original, w: framed.w, h: framed.h, no: no });
         }).then(function (res) {
           // An older backend that doesn't know framed uploads yet: send the plain photo instead
           if (res && !res.ok && res.error === "Bad request") return postJSON({ data: original, mimeType: "image/jpeg" });
@@ -811,6 +814,14 @@ function handlePhotos(input) {
       .catch(function () { failed++; })
       .then(function () { next(i + 1); });
   })(0);
+}
+
+// The photo's number in tonight's album, for the frame. Falls back to no number.
+function getTicket() {
+  return fetch(UPLOAD_URL + "?action=ticket&t=" + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (res) { return (res && res.ok && res.n) || 0; })
+    .catch(function () { return 0; });
 }
 
 function postJSON(body) {

@@ -37,6 +37,7 @@ function doGet(e) {
   var p = (e && e.parameter) || {};
   try {
     if (p.action === 'list') return json_({ ok: true, photos: approvedList_() });
+    if (p.action === 'ticket') return json_({ ok: true, n: nextTicket_() });
     if (p.action === 'admin') {
       checkPin_(p.pin);
       var items = readIndex_().items;
@@ -78,7 +79,7 @@ function upload_(body) {
   withLock_(function () {
     var idx = readIndex_();
     idx.items.push({
-      id: framedFile.getId(), o: originalId, s: 'p',
+      id: framedFile.getId(), o: originalId, s: 'p', no: Number(body.no) || 0,
       w: Number(body.w) || 0, h: Number(body.h) || 0,
       t: Date.now(), at: 0
     });
@@ -120,6 +121,17 @@ function legacyUpload_(body) {
 }
 
 // ---------------------------------------------------------------- helpers
+
+// Hands out tonight's photo numbers (No. 001, 002, ...) for the frame
+function nextTicket_() {
+  var n = 0;
+  withLock_(function () {
+    var props = PropertiesService.getScriptProperties();
+    n = Number(props.getProperty('TICKET') || 0) + 1;
+    props.setProperty('TICKET', String(n));
+  });
+  return n;
+}
 
 function approvedList_() {
   var cache = CacheService.getScriptCache();

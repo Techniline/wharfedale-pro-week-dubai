@@ -55,8 +55,39 @@
     ctx.stroke();
   }
 
-  /** Returns a Promise of { dataUrl, w, h } for the branded JPEG. */
-  window.makeSoundcheckFrame = function (photo) {
+  // Cheap, cross-browser blur (canvas ctx.filter isn't available on older iOS):
+  // shrink the region a lot, then scale it back up with smoothing.
+  function softBlur(src, sx, sy, sw, sh, dw, dh) {
+    var s1 = document.createElement('canvas');
+    s1.width = Math.max(8, Math.round(dw / 28)); s1.height = Math.max(4, Math.round(dh / 28));
+    var c1 = s1.getContext('2d');
+    c1.imageSmoothingQuality = 'high';
+    c1.drawImage(src, sx, sy, sw, sh, 0, 0, s1.width, s1.height);
+    var s2 = document.createElement('canvas');
+    s2.width = Math.round(dw / 7); s2.height = Math.max(4, Math.round(dh / 7));
+    var c2 = s2.getContext('2d');
+    c2.imageSmoothingQuality = 'high';
+    c2.drawImage(s1, 0, 0, s2.width, s2.height);
+    return s2;
+  }
+
+  function pad3(n) { return ('00' + n).slice(-3); }
+
+  function dubaiTime(d) {
+    try {
+      return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Dubai' }).format(d);
+    } catch (e) {
+      var h = d.getHours(), m = d.getMinutes();
+      return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM');
+    }
+  }
+
+  /**
+   * Returns a Promise of { dataUrl, w, h } for the branded JPEG.
+   * opts.no: the photo's number in tonight's album (optional)
+   */
+  window.makeSoundcheckFrame = function (photo, opts) {
+    opts = opts || {};
     return loadAssets().then(function (a) {
       var logo = a[0], tl = a[1];
       var nw = photo.naturalWidth, nh = photo.naturalHeight;
@@ -69,9 +100,35 @@
       var c = document.createElement('canvas');
       c.width = W; c.height = H;
       var ctx = c.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
 
       // photo, full and uncropped
       ctx.drawImage(photo, 0, 0, W, ph);
+
+      // ---- glass bar: the bottom of the photo continues underneath, mirrored and blurred
+      var stripH = Math.min(ph, bar * 1.4);
+      var glass = softBlur(c, 0, ph - stripH, W, stripH, W, bar);
+      ctx.save();
+      ctx.translate(0, ph + bar);
+      ctx.scale(1, -1); // mirror so the colours flow straight on from the photo's edge
+      ctx.drawImage(glass, 0, 0, W, bar);
+      ctx.restore();
+      var tint = ctx.createLinearGradient(0, ph, 0, H);
+      tint.addColorStop(0, 'rgba(3,12,11,0.50)');
+      tint.addColorStop(1, 'rgba(3,10,9,0.86)');
+      ctx.fillStyle = tint;
+      ctx.fillRect(0, ph, W, bar);
+      var glow = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.7);
+      glow.addColorStop(0, 'rgba(23,230,196,0.20)');
+      glow.addColorStop(1, 'rgba(23,230,196,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, ph, W, bar);
+      // soft fade above the bar so there's no hard edge
+      var fade = ctx.createLinearGradient(0, ph - bar * 0.55, 0, ph);
+      fade.addColorStop(0, 'rgba(3,12,11,0)');
+      fade.addColorStop(1, 'rgba(3,12,11,0.42)');
+      ctx.fillStyle = fade;
+      ctx.fillRect(0, ph - bar * 0.55, W, bar * 0.55);
 
       // teal corner brackets on the photo (top corners, like the page's viewfinder)
       var size = W * (portrait ? 0.07 : 0.05), inset = W * 0.03;
@@ -82,21 +139,28 @@
       corner(ctx, W - inset, inset, size, -1, 1, size * 0.25);
       ctx.restore();
 
-      // branding bar
-      ctx.fillStyle = '#070b0a';
-      ctx.fillRect(0, ph, W, bar);
-      var glow = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.7);
-      glow.addColorStop(0, 'rgba(23,230,196,0.18)');
-      glow.addColorStop(1, 'rgba(23,230,196,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, ph, W, bar);
-      ctx.fillStyle = 'rgba(23,230,196,0.6)';
-      ctx.fillRect(0, ph, W, Math.max(2, Math.round(W * 0.0025)));
+      // ---- sound-wave accent along the top edge of the bar (fades out at both ends)
+      function wave(amp, period, phase, width, alpha, glowPx) {
+        ctx.save();
+        ctx.beginPath();
+        for (var px = 0; px <= W; px += 4) {
+          var env = Math.pow(Math.sin(Math.PI * px / W), 0.7);
+          var py = ph + amp * env * Math.sin(px / period * Math.PI * 2 + phase);
+          if (px === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = 'rgba(23,230,196,' + alpha + ')';
+        ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        if (glowPx) { ctx.shadowColor = 'rgba(23,230,196,0.9)'; ctx.shadowBlur = glowPx; }
+        ctx.stroke();
+        ctx.restore();
+      }
+      wave(bar * 0.11, W / 4.2, 1.3, Math.max(1.5, W * 0.0014), 0.35, 0);
+      wave(bar * 0.075, W / 7, 0, Math.max(2, W * 0.0024), 0.95, W * 0.008);
 
       var pad = W * 0.045, mid = ph + bar / 2;
 
-      // Wharfedale Pro logo, larger than the bar: the "Wharfedale Pro" script
-      // sits in the bar while the chevron rises over the bottom of the photo
+      // ---- Wharfedale Pro logo, larger than the bar: the script sits in the bar
+      // while the chevron rises over the bottom of the photo (and over the wave)
       var lh = bar * (portrait ? 1.08 : 1.25), lw = lh * (logo.naturalWidth || 667) / (logo.naturalHeight || 540);
       var ly = H - bar * 0.1 - lh;
       var lcx = pad + lw / 2, lcy = ly + lh * 0.3;
@@ -117,18 +181,22 @@
       ctx.fillRect(x, mid - bar * 0.25, Math.max(1, W * 0.0015), bar * 0.5);
       x += W * 0.026;
 
-      // Hosted by Techniline block size, so the title can be fitted beside it
-      var hSize = W * (portrait ? 0.016 : 0.0115), tlh = W * (portrait ? 0.032 : 0.024);
-      var tlw = tlh * tl.naturalWidth / tl.naturalHeight;
-      var right = W - pad;
-      ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
+      // ---- right block: "No. 024 / 9:41 PM", HOSTED BY, Techniline
+      var dot = String.fromCharCode(183); // middle dot, kept as a code so the file stays ASCII
+      var meta = (opts.no ? 'NO. ' + pad3(opts.no) + '  ' + dot + '  ' : '') + dubaiTime(new Date()).toUpperCase();
+      var hSize = W * (portrait ? 0.016 : 0.0115), mSize = hSize * 1.05;
+      var tlh = W * (portrait ? 0.032 : 0.024), tlw = tlh * tl.naturalWidth / tl.naturalHeight;
+      var right = W - pad, gap = W * 0.008;
       var spacing = hSize * 0.25, label = 'HOSTED BY';
-      var hostW = Math.max(tlw, spacedWidth(ctx, label, spacing));
+      ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
+      var labelW = spacedWidth(ctx, label, spacing);
+      ctx.font = '700 ' + mSize + 'px Manrope, Arial, sans-serif';
+      var metaW = spacedWidth(ctx, meta, mSize * 0.16);
+      var hostW = Math.max(tlw, labelW, metaW);
 
-      // Soundcheck / Wharfedale Pro Week - Dubai, shrunk if it would reach the host block
+      // ---- Soundcheck / Wharfedale Pro Week - Dubai, shrunk if it would reach the right block
       var tSize = W * (portrait ? 0.06 : 0.04), sSize = W * (portrait ? 0.0285 : 0.021);
-      // middle dot built from its code so the file stays plain ASCII
-      var sub = 'Wharfedale Pro Week ' + String.fromCharCode(183) + ' Dubai';
+      var sub = 'Wharfedale Pro Week ' + dot + ' Dubai';
       ctx.font = 'italic 400 ' + sSize + 'px Fraunces, Georgia, serif';
       var subW = ctx.measureText(sub).width;
       ctx.font = '400 ' + tSize + 'px Fraunces, Georgia, serif';
@@ -148,12 +216,18 @@
       ctx.fillStyle = grad;
       ctx.fillText(sub, x, top + tSize * 0.95 + W * 0.006 + sSize * 0.8);
 
-      // Hosted by Techniline, right-aligned
+      // draw the right block, vertically centred in the bar
+      var blockR = mSize + gap * 1.6 + hSize + gap + tlh;
+      var y0 = mid - blockR / 2;
+      ctx.font = '700 ' + mSize + 'px Manrope, Arial, sans-serif';
+      ctx.fillStyle = '#8ff5e3';
+      drawSpaced(ctx, meta, right - metaW, y0 + mSize * 0.8, mSize * 0.16);
+      y0 += mSize + gap * 1.6;
       ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      var hb = (hSize + W * 0.008 + tlh);
-      drawSpaced(ctx, label, right - spacedWidth(ctx, label, spacing), mid - hb / 2 + hSize * 0.8, spacing);
-      ctx.drawImage(tl, right - tlw, mid - hb / 2 + hSize + W * 0.008, tlw, tlh);
+      drawSpaced(ctx, label, right - labelW, y0 + hSize * 0.8, spacing);
+      y0 += hSize + gap;
+      ctx.drawImage(tl, right - tlw, y0, tlw, tlh);
 
       return { dataUrl: c.toDataURL('image/jpeg', 0.88), w: W, h: H };
     });
