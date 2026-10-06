@@ -42,6 +42,20 @@
   .top-row { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
   .top h2 { font-size: 21px; }
   .top .live { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--teal); text-decoration: none; border: 1px solid var(--tint-strong); border-radius: 999px; padding: 7px 12px; white-space: nowrap; }
+  .auto-row { max-width: 1100px; margin: 12px auto 0; }
+  .switch { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(255,255,255,0.02); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .25s, background .25s; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .track { position: relative; flex: none; width: 48px; height: 28px; border-radius: 999px; background: #26302d; transition: background .25s var(--ease); }
+  .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #cfd8d5; box-shadow: 0 2px 6px rgba(0,0,0,0.4); transition: transform .25s var(--ease), background .25s; }
+  .switch input:checked + .track { background: var(--teal); }
+  .switch input:checked + .track .knob { transform: translateX(20px); background: #fff; }
+  .switch input:focus-visible + .track { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .switch-text { display: flex; flex-direction: column; line-height: 1.25; }
+  .switch-text b { font-size: 14px; }
+  .switch-text small { font-size: 12px; color: var(--faint); }
+  .switch.on { border-color: var(--tint-strong); background: var(--tint); }
+  .switch.on small { color: var(--teal); }
+  .switch.busy { opacity: 0.6; pointer-events: none; }
   .tabs { max-width: 1100px; margin: 12px auto 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .tabs button { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--hair-strong); background: transparent; color: var(--dim); font-size: 13px; font-weight: 700; cursor: pointer; }
   .tabs button.on { border-color: var(--teal); color: var(--teal); background: var(--tint); }
@@ -95,6 +109,13 @@
       <h2>Approve photos</h2>
       <a class="live" href="live.html" target="_blank" rel="noopener">Open big screen ↗</a>
     </div>
+    <div class="auto-row">
+      <label class="switch">
+        <input type="checkbox" id="auto" role="switch">
+        <span class="track" aria-hidden="true"><span class="knob"></span></span>
+        <span class="switch-text"><b>Auto-approve</b><small id="auto-hint">New photos wait for approval</small></span>
+      </label>
+    </div>
     <nav class="tabs" role="tablist">
       <button class="on" data-tab="p" type="button">Waiting <b id="c-p">0</b></button>
       <button data-tab="a" type="button">Approved <b id="c-a">0</b></button>
@@ -141,6 +162,7 @@ function load() {
       if (!res.ok) throw new Error(res.error || "Couldn't load photos");
       if (!Array.isArray(res.photos)) throw new Error("The photo service needs updating (new version not deployed yet).");
       items = res.photos;
+      setAutoUI(!!res.auto);
       render();
       return true;
     });
@@ -200,6 +222,41 @@ function review(it, status) {
     .then(function (res) { if (!res.ok) throw new Error(res.error); })
     .catch(function (e) { it.s = prev; render(); toast("Didn't save: " + (e.message || "try again")); });
 }
+
+// --- Auto-approve switch ---------------------------------------------------
+var autoBox = document.getElementById("auto");
+function setAutoUI(on) {
+  autoBox.checked = on;
+  autoBox.closest(".switch").classList.toggle("on", on);
+  document.getElementById("auto-hint").textContent = on
+    ? "ON: new photos go live instantly. Hide any you don't want."
+    : "New photos wait for approval";
+}
+autoBox.addEventListener("change", function () {
+  var on = autoBox.checked;
+  if (on && !confirm("Turn on Auto-approve? New photos will appear on the big screen and website straight away, without checking. You can still hide any photo afterwards.")) {
+    autoBox.checked = false; return;
+  }
+  var sw = autoBox.closest(".switch");
+  sw.classList.add("busy");
+  fetch(UPLOAD_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "settings", pin: pin, auto: on })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error);
+      setAutoUI(res.auto);
+      toast(res.auto ? "Auto-approve is ON" : "Auto-approve is OFF: photos wait for approval");
+    })
+    .catch(function (e) {
+      setAutoUI(!on);
+      var msg = e.message === "Bad request" ? "Update the Google Script to use this switch" : (e.message || "try again");
+      toast("Didn't save: " + msg);
+    })
+    .then(function () { sw.classList.remove("busy"); });
+});
 
 function openView(it) {
   viewing = it;

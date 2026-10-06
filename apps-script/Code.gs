@@ -3,7 +3,8 @@
  *
  * - Guests upload photos from the landing page (no sign-in). Each upload is
  *   the branded framed photo plus the original.
- * - New photos are "waiting" until approved on admin.html (PIN protected).
+ * - New photos are "waiting" until approved on admin.html (PIN protected),
+ *   unless the team turns on Auto-approve there.
  * - The website album (index.html) and the big screen (live.html) only ever
  *   receive approved photos.
  *
@@ -40,7 +41,7 @@ function doGet(e) {
     if (p.action === 'admin') {
       checkPin_(p.pin);
       var items = readIndex_().items;
-      return json_({ ok: true, photos: items.slice().reverse() });
+      return json_({ ok: true, photos: items.slice().reverse(), auto: isAuto_() });
     }
     return json_({ ok: true, service: 'wharfedale-photo-upload' });
   } catch (err) {
@@ -55,6 +56,7 @@ function doPost(e) {
     var body = JSON.parse(e.postData.contents);
     if (body.action === 'upload') return json_(upload_(body));
     if (body.action === 'review') return json_(review_(body));
+    if (body.action === 'settings') return json_(settings_(body));
     return json_(legacyUpload_(body));
   } catch (err) {
     return json_({ ok: false, error: String(err.message || err) });
@@ -75,16 +77,18 @@ function upload_(body) {
     originalId = getSubFolder_('Originals').createFile(Utilities.newBlob(original, 'image/jpeg', 'Original ' + stamp + '.jpg')).getId();
   }
 
+  var auto = isAuto_();
   withLock_(function () {
     var idx = readIndex_();
     idx.items.push({
-      id: framedFile.getId(), o: originalId, s: 'p',
+      id: framedFile.getId(), o: originalId, s: auto ? 'a' : 'p',
       w: Number(body.w) || 0, h: Number(body.h) || 0,
-      t: Date.now(), at: 0
+      t: Date.now(), at: auto ? Date.now() : 0
     });
     writeIndex_(idx);
   });
-  return { ok: true };
+  if (auto) CacheService.getScriptCache().remove(LIST_CACHE_KEY);
+  return { ok: true, approved: auto };
 }
 
 function review_(body) {
@@ -108,6 +112,17 @@ function review_(body) {
   else file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   CacheService.getScriptCache().remove(LIST_CACHE_KEY);
   return { ok: true };
+}
+
+// Auto-approve switch on the approval page: new uploads go live immediately
+function settings_(body) {
+  checkPin_(body.pin);
+  PropertiesService.getScriptProperties().setProperty('AUTO_APPROVE', body.auto ? '1' : '0');
+  return { ok: true, auto: !!body.auto };
+}
+
+function isAuto_() {
+  return PropertiesService.getScriptProperties().getProperty('AUTO_APPROVE') === '1';
 }
 
 // Older page versions sent a single photo; keep accepting them.

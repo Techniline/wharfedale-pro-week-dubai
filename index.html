@@ -781,7 +781,7 @@ function handlePhotos(input) {
   uploading = true;
   var vf = document.getElementById("viewfinder");
   vf.classList.add("busy");
-  var done = 0, failed = 0;
+  var done = 0, failed = 0, live = 0;
   (function next(i) {
     if (i >= files.length) {
       uploading = false;
@@ -789,7 +789,7 @@ function handlePhotos(input) {
       if (done) { vf.classList.remove("flash"); void vf.offsetWidth; vf.classList.add("flash"); }
       if (done) {
         document.getElementById("capture-toast").classList.remove("show");
-        showThanks(done, failed);
+        showThanks(done, failed, live);
       } else {
         showToast("Couldn't upload your photo" + (files.length > 1 ? "s" : "") + ". Check your connection and try again.");
       }
@@ -807,7 +807,7 @@ function handlePhotos(input) {
           return res;
         });
       })
-      .then(function (res) { if (res && res.ok) done++; else failed++; })
+      .then(function (res) { if (res && res.ok) { done++; if (res.approved) live++; } else failed++; })
       .catch(function () { failed++; })
       .then(function () { next(i + 1); });
   })(0);
@@ -843,10 +843,12 @@ function shrinkImage(img, maxSide) {
   return c.toDataURL("image/jpeg", 0.85);
 }
 
-function showThanks(done, failed) {
-  document.getElementById("thanks-msg").textContent = (done === 1
-    ? "Your photo has been sent to tonight's album."
-    : "Your " + done + " photos have been sent to tonight's album.") + " It'll appear once our team approves it.";
+function showThanks(done, failed, live) {
+  // live: photos that went straight into the album because Auto-approve is on
+  document.getElementById("thanks-msg").textContent = live === done
+    ? (done === 1 ? "Your photo is now in tonight's album." : "Your " + done + " photos are now in tonight's album.")
+    : (done === 1 ? "Your photo has been sent to tonight's album." : "Your " + done + " photos have been sent to tonight's album.") + " It'll appear once our team approves it.";
+  if (live) loadAlbum();
   var note = document.getElementById("thanks-note");
   note.hidden = !failed;
   if (failed) note.textContent = failed + " photo" + (failed > 1 ? "s" : "") + " couldn't upload. You can try " + (failed > 1 ? "them" : "it") + " again.";
