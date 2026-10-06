@@ -121,10 +121,6 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .hero .tagline { margin: 28px auto 0; max-width: 44ch; font-size: clamp(16.5px, 2.4vw, 19px); line-height: 1.6; color: var(--ink-dim); }
-  .event-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 40px; margin: 36px auto 0; padding-top: 26px; border-top: 1px solid var(--hairline); width: 100%; max-width: 560px; }
-  .event-meta div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .event-meta span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); }
-  .event-meta strong { font-family: 'Fraunces', serif; font-weight: 400; font-size: 18px; color: var(--ink); }
   .hero-waves { position: absolute; left: 0; right: 0; bottom: 34px; height: 120px; pointer-events: none; z-index: -1; -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
   .hero-waves svg { width: 100%; height: 100%; overflow: visible; }
   .hero-waves path { fill: none; stroke-linecap: round; }
@@ -362,8 +358,7 @@
     .section-head { margin-bottom: 34px; }
     .hero { padding: 56px 0 140px; }
     .hero-logo { height: 104px; margin-bottom: 32px; }
-    .event-meta { gap: 16px 28px; }
-    .flip-card { height: 140px; }
+      .flip-card { height: 140px; }
     .flip-face { padding: 22px; }
     .flip-front .num { font-size: 26px; min-width: 36px; }
     .flip-front h3 { font-size: 19px; }
@@ -398,10 +393,6 @@
     <img class="hero-logo reveal" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro" width="667" height="540">
     <h1 class="reveal d1">Welcome to Soundcheck <em class="h1-sub">Wharfedale Pro Week · Dubai</em></h1>
     <p class="tagline reveal d2">An intimate, invitation only evening with the Wharfedale Pro team, because some conversations are better had in person, over good food, with people who matter.</p>
-    <div class="event-meta reveal d3">
-      <div><span>Date</span><strong>14 October 2026</strong></div>
-      <div><span>Venue</span><strong>Mövenpick Grand Al Bustan</strong></div>
-    </div>
   </div>
   <div class="hero-waves" aria-hidden="true"><svg viewBox="0 0 1000 120" preserveAspectRatio="none" id="hero-waves"></svg></div>
   <a class="scroll-cue" href="#highlights">Scroll</a>
