@@ -345,6 +345,7 @@
   .lb-prev { left: 12px; top: 50%; transform: translateY(-50%); }
   .lb-next { right: 12px; top: 50%; transform: translateY(-50%); }
   @media (max-width: 639px) { .lb-prev, .lb-next { top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); transform: none; } .lb-prev { left: calc(50% - 64px); } .lb-next { right: calc(50% - 64px); } }
+  .lb-dl { position: absolute; top: max(16px, env(safe-area-inset-top)); right: 72px; height: 46px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; border-radius: 999px; background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: var(--on-teal); font-size: 14px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 30px -10px rgba(23,230,196,0.6); }
   .lb-count { position: absolute; top: max(28px, env(safe-area-inset-top)); left: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); }
 
   /* ---------- Thank-you card after an upload ---------- */
@@ -703,6 +704,10 @@
   <img class="lb-img" id="lb-img" alt="">
   <button class="lb-btn lb-next" type="button" aria-label="Next photo" onclick="stepLightbox(1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
   <div class="lb-count" id="lb-count"></div>
+  <a class="lb-dl" id="lb-dl" href="#" target="_blank" rel="noopener">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+    Download
+  </a>
 </div>
 
 <div class="thanks" id="thanks" role="dialog" aria-modal="true" aria-labelledby="thanks-title" hidden>
@@ -905,6 +910,8 @@ function showLightbox() {
   if (!p) return closeLightbox();
   document.getElementById("lb-img").src = driveImg(p.id, 2000);
   document.getElementById("lb-count").textContent = (lbIndex + 1) + " / " + albumPhotos.length;
+  // full-resolution framed photo straight from Google Drive
+  document.getElementById("lb-dl").href = "https://drive.google.com/uc?export=download&id=" + encodeURIComponent(p.id);
 }
 function stepLightbox(d) {
   if (!albumPhotos.length) return;
