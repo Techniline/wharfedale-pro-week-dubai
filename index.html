@@ -734,7 +734,7 @@
   </div>
 </div>
 
-<script src="assets/frame.js?v=5"></script>
+<script src="assets/frame.js?v=6"></script>
 <script>
 function togglePanel(id) {
   var panel = document.getElementById(id);
@@ -773,9 +773,9 @@ document.querySelectorAll(".flip-card").forEach(function (card) {
 // --- Capture the Moment ---------------------------------------------------
 // The camera button opens the phone camera directly; the gallery button lets
 // guests pick existing photos. On the phone each photo becomes the branded
-// Soundcheck frame (assets/frame.js) plus a resized original (max 2000px),
-// both posted to UPLOAD_URL. Photos wait for approval before appearing in the
-// album. No sign-in needed on the guest's side.
+// Soundcheck frame (assets/frame.js), which is posted to UPLOAD_URL. Photos
+// wait for approval (unless Auto-approve is on) before appearing in the album.
+// No sign-in needed on the guest's side.
 var uploading = false;
 
 function handlePhotos(input) {
@@ -811,16 +811,12 @@ function handlePhotos(input) {
     var prog = null;
     loadPhoto(files[i])
       .then(function (img) {
-        var original = shrinkImage(img).split(",")[1];
         return window.makeSoundcheckFrame(img).then(function (framed) {
-          var body = { action: "upload", framed: framed.dataUrl.split(",")[1], original: original, w: framed.w, h: framed.h };
+          // Only the branded photo is sent: half the data, so uploads stay quick on slow uplinks
+          var body = { action: "upload", framed: framed.dataUrl.split(",")[1], w: framed.w, h: framed.h };
           vfTitle.textContent = "Adding to tonight's album" + of;
-          prog = fakeProgress(vf, vfSub, (body.framed.length + body.original.length) / 1024);
+          prog = fakeProgress(vf, vfSub, body.framed.length / 1024);
           return postJSON(body);
-        }).then(function (res) {
-          // An older backend that doesn't know framed uploads yet: send the plain photo instead
-          if (res && !res.ok && res.error === "Bad request") return postJSON({ data: original, mimeType: "image/jpeg" });
-          return res;
         });
       })
       .then(function (res) {
@@ -840,12 +836,12 @@ function setRing(vf, p) {
   if (c) c.style.strokeDashoffset = String(301.6 * (1 - p));
 }
 function fakeProgress(vf, label, kb) {
-  var expected = 2500 + kb * 6, start = Date.now(), stop = false; // ~170 KB/s plus server time
+  var expected = 8000 + kb * 15, start = Date.now(), stop = false; // ~65 KB/s uplink plus server time
   (function tick() {
     if (stop) return;
-    var p = 0.08 + 0.87 * (1 - Math.exp(-(Date.now() - start) / (expected / 2.2)));
+    var p = 0.08 + 0.84 * (1 - Math.exp(-(Date.now() - start) / (expected / 2.2)));
     setRing(vf, p);
-    label.textContent = (p > 0.9 ? "Almost there… " : "Sending… ") + Math.round(p * 100) + "%";
+    label.textContent = p > 0.88 ? "Saving to the album…" : "Sending… " + Math.round(p * 100) + "%";
     requestAnimationFrame(tick);
   })();
   return { finish: function () { stop = true; setRing(vf, 1); label.textContent = "Done 100%"; } };
@@ -856,7 +852,7 @@ function fakeProgress(vf, label, kb) {
 function postJSON(body, attempt) {
   attempt = attempt || 1;
   var ctrl = window.AbortController ? new AbortController() : null;
-  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 60000) : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 120000) : null;
   return fetch(UPLOAD_URL, {
     method: "POST",
     // text/plain keeps this a "simple" request, which Apps Script accepts cross-origin
@@ -869,7 +865,8 @@ function postJSON(body, attempt) {
       try { return JSON.parse(t); } catch (e) { throw new Error("Server busy"); }
     })
     .catch(function (e) {
-      if (attempt < 2) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return postJSON(body, 2); });
+      if (timer) clearTimeout(timer);
+      if (attempt < 2 && !(e && e.name === "AbortError")) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return postJSON(body, 2); });
       throw new Error(e && e.name === "AbortError" ? "Timed out" : (e && e.message) || "Network error");
     })
     .then(function (res) { if (timer) clearTimeout(timer); return res; });
@@ -886,15 +883,7 @@ function loadPhoto(file) {
   });
 }
 
-function shrinkImage(img, maxSide) {
-  maxSide = maxSide || 1600;
-  var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
-  var c = document.createElement("canvas");
-  c.width = Math.round(img.naturalWidth * scale);
-  c.height = Math.round(img.naturalHeight * scale);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.82);
-}
+
 
 function showThanks(done, failed, live) {
   // live: photos that went straight into the album because Auto-approve is on

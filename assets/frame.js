@@ -91,7 +91,7 @@
       var logo = a[0], tl = a[1];
       var nw = photo.naturalWidth, nh = photo.naturalHeight;
       var portrait = nh > nw;
-      var W = portrait ? 1200 : 1600;
+      var W = portrait ? 1080 : 1440;
       var ph = Math.round(W * nh / nw);
       var bar = Math.round(W * (portrait ? 0.2 : 0.125));
       var H = ph + bar;
@@ -228,7 +228,7 @@
       y0 += hSize + gap;
       ctx.drawImage(tl, right - tlw, y0, tlw, tlh);
 
-      return { dataUrl: c.toDataURL('image/jpeg', 0.86), w: W, h: H };
+      return { dataUrl: c.toDataURL('image/jpeg', 0.82), w: W, h: H };
     });
   };
 })();
