@@ -319,8 +319,10 @@
       <span class="hashtag">#TechnilineElectronics</span>
     </div>
     <div class="capture-actions">
-      <input type="file" accept="image/*" id="photo-input" style="display:none" onchange="captureAndAddToAlbum(this)">
-      <button class="btn btn-primary" type="button" onclick="document.getElementById('photo-input').click()">Capture and add to our photo album</button>
+      <input type="file" accept="image/*" capture="environment" id="camera-input" style="display:none" onchange="handlePhotos(this)">
+      <input type="file" accept="image/*" multiple id="gallery-input" style="display:none" onchange="handlePhotos(this)">
+      <button class="btn btn-primary" type="button" onclick="document.getElementById('camera-input').click()">Capture and add to our photo album</button>
+      <button class="btn btn-ghost" type="button" onclick="document.getElementById('gallery-input').click()">Upload from your gallery</button>
       <a class="btn btn-ghost" href="https://www.instagram.com/itswharfedalepro" target="_blank" rel="noopener">Tag @itswharfedalepro on Instagram</a>
     </div>
   </div>
@@ -411,29 +413,74 @@ function togglePanel(id) {
   }
 }
 var WHATSAPP_NUMBER = "971552872104"; // Techniline
-var ALBUM_URL = "https://photos.app.goo.gl/gYQveCpco3EDMUSQ8"; // tonight's shared photo album
+// Google Apps Script web app that saves uploads into the event's Drive folder
+// (see apps-script/Code.gs).
+var UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
 
 // --- Capture the Moment ---------------------------------------------------
-// Opens the camera/gallery picker; once a photo is chosen, sends the guest
-// straight to the shared album to add it in. The photo can't be inserted
-// automatically (Google Photos has no public upload API for anonymous
-// visitors), so this gets them one tap away from adding it themselves,
-// with an on screen nudge explaining that last tap.
-function captureAndAddToAlbum(input) {
-  var file = input.files && input.files[0];
-  if (!file) return;
-  showToast("Nice shot! We've opened the album in a new tab \u2014 tap + there and choose the photo you just took to add it in.");
-  window.open(ALBUM_URL, "_blank");
+// The camera button opens the phone camera directly; the gallery button lets
+// guests pick existing photos. Each photo is shrunk on the phone (max 2000px
+// JPEG) so uploads are quick on venue Wi-Fi, then posted to UPLOAD_URL.
+// No sign-in needed on the guest's side.
+var uploading = false;
+
+function handlePhotos(input) {
+  var files = Array.prototype.slice.call(input.files || []);
   input.value = "";
+  if (!files.length) return;
+  if (uploading) { showToast("Hang on, still uploading your last photo…", true); return; }
+  uploading = true;
+  var done = 0, failed = 0;
+  (function next(i) {
+    if (i >= files.length) {
+      uploading = false;
+      if (!failed) showToast(done === 1 ? "Added to tonight's album. Thank you!" : done + " photos added to tonight's album. Thank you!");
+      else showToast("Couldn't upload " + failed + " of " + files.length + " photo" + (files.length > 1 ? "s" : "") + ". Check your connection and try again.");
+      return;
+    }
+    showToast(files.length > 1 ? "Uploading photo " + (i + 1) + " of " + files.length + "…" : "Uploading your photo…", true);
+    shrinkImage(files[i])
+      .then(function (dataUrl) {
+        return fetch(UPLOAD_URL, {
+          method: "POST",
+          // text/plain keeps this a "simple" request, which Apps Script accepts cross-origin
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ data: dataUrl.split(",")[1], mimeType: "image/jpeg" })
+        });
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (res) { if (res && res.ok) done++; else failed++; })
+      .catch(function () { failed++; })
+      .then(function () { next(i + 1); });
+  })(0);
 }
 
-function showToast(msg) {
+function shrinkImage(file, maxSide) {
+  maxSide = maxSide || 2000;
+  return new Promise(function (resolve, reject) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      var c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale);
+      c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("Unreadable image")); };
+    img.src = url;
+  });
+}
+
+function showToast(msg, sticky) {
   var t = document.getElementById("capture-toast");
   if (!t) return;
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(t._hideTimer);
-  t._hideTimer = setTimeout(function () { t.classList.remove("show"); }, 7000);
+  if (!sticky) t._hideTimer = setTimeout(function () { t.classList.remove("show"); }, 7000);
 }
 
 function sendDemo(e) {
