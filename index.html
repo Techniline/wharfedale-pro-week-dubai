@@ -39,7 +39,8 @@
     --ease: cubic-bezier(.2, .7, .2, 1);
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; -webkit-text-size-adjust: 100%; }
+  a, button, .flip-card, label { touch-action: manipulation; }
   body {
     margin: 0;
     background: var(--bg);
@@ -108,7 +109,6 @@
   .hero::before {
     content: ""; position: absolute; z-index: -2; width: 900px; height: 900px; left: 50%; top: 42%; transform: translate(-30%, -50%);
     background: radial-gradient(closest-side, rgba(23, 230, 196, 0.16), rgba(0, 110, 96, 0.08) 45%, transparent 72%);
-    filter: blur(10px);
   }
   .hero-emblem { position: absolute; z-index: -1; right: -60px; top: 50%; width: min(70vw, 560px); transform: translateY(-58%); opacity: 0.06; pointer-events: none; }
   .hero .kicker { display: inline-flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--teal); margin-bottom: 26px; }
@@ -128,7 +128,7 @@
   .hero-waves { position: absolute; left: 0; right: 0; bottom: 34px; height: 120px; pointer-events: none; z-index: -1; -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
   .hero-waves svg { width: 100%; height: 100%; overflow: visible; }
   .hero-waves path { fill: none; stroke-linecap: round; }
-  .hero-waves g { animation: drift linear infinite; }
+  .hero-waves g { animation: drift linear infinite; will-change: transform; }
   @keyframes drift { to { transform: translateX(-1000px); } }
   .scroll-cue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint); text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .scroll-cue::after { content: ""; width: 1px; height: 28px; background: linear-gradient(var(--teal), transparent); animation: cue 2s var(--ease) infinite; transform-origin: top; }
@@ -158,11 +158,11 @@
     display: flex; flex-direction: column; justify-content: center;
   }
   .flip-front { flex-direction: row; align-items: center; gap: 18px; background: var(--bg-card-solid); border: 1px solid var(--hairline-strong); }
-  .flip-card:hover .flip-front { border-color: var(--teal-tint-strong); }
+
   .flip-front .num { font-family: 'Fraunces', serif; font-style: italic; font-size: 30px; font-weight: 300; color: var(--teal); line-height: 1; min-width: 42px; }
   .flip-front h3 { font-size: 21px; font-weight: 400; line-height: 1.2; }
   .flip-front .hint { margin-left: auto; width: 34px; height: 34px; flex: none; border-radius: 50%; border: 1px solid var(--hairline-strong); display: grid; place-items: center; color: var(--ink-dim); transition: all .3s var(--ease); }
-  .flip-card:hover .hint { border-color: var(--teal); color: var(--teal); transform: rotate(90deg); }
+
   .flip-back { transform: rotateY(180deg); background: radial-gradient(120% 140% at 0% 0%, #0b7d6d, #04211d 62%); border: 1px solid var(--teal-tint-strong); box-shadow: var(--glow); }
   .flip-back p { margin: 0; color: var(--ink); font-size: 16px; line-height: 1.5; max-width: 40ch; }
   .flip-back .tap { position: absolute; bottom: 14px; right: 18px; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal-soft); font-weight: 700; opacity: 0.8; }
@@ -185,10 +185,33 @@
   .swipe-hint { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-top: 6px; }
   @media (min-width: 1060px) { .swipe-hint { display: none; } }
 
+  /* Phones: the itinerary becomes a vertical timeline that lights up as you scroll */
+  @media (max-width: 759px) {
+    .wave-track { overflow: visible; padding: 0 24px; }
+    .wave-canvas { width: auto; height: auto; max-width: 560px; margin: 0; }
+    .wave-svg, .swipe-hint { display: none; }
+    .stops { position: relative; height: auto; flex-direction: column; gap: 34px; padding: 4px 0 4px 40px; }
+    .stops::before { content: ""; position: absolute; left: 6px; top: 10px; bottom: 10px; width: 1px; background: var(--hairline-strong); }
+    .stops::after { content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: linear-gradient(var(--teal-2), var(--teal) 60%, var(--teal-soft)); box-shadow: 0 0 14px rgba(23,230,196,0.55); transform-origin: top; transform: scaleY(var(--progress, 0)); }
+    .stop { width: auto; flex-direction: row; align-items: flex-start; text-align: left; animation: none !important; }
+    .stop-dot { position: absolute; left: -40px; top: 6px; margin: 0; }
+    .stop-label { margin: 0; }
+    .stop-title { font-size: 21px; }
+    .stop-desc { padding: 0; font-size: 15px; }
+    .js .stop { opacity: 0.32; transition: opacity .6s var(--ease); }
+    .js .stop.lit { opacity: 1; }
+    .js .stop .stop-dot { background: var(--ink-faint); transform: scale(0.7); box-shadow: 0 0 0 5px var(--bg-alt); transition: transform .5s var(--ease), background .5s, box-shadow .5s; }
+    .js .stop.lit .stop-dot { background: var(--teal); transform: none; box-shadow: 0 0 0 5px var(--bg-alt), 0 0 0 6px var(--teal-tint-strong), 0 0 22px 4px rgba(23,230,196,0.5); }
+  }
+
   /* ---------- Products ---------- */
   .products { display: grid; gap: 16px; }
   .product { padding: 30px 28px 28px; overflow: hidden; }
-  .product:hover { border-color: var(--teal-tint-strong); transform: translateY(-3px); box-shadow: 0 18px 40px -20px rgba(23,230,196,0.35); }
+  @media (hover: hover) {
+    .flip-card:hover .flip-front { border-color: var(--teal-tint-strong); }
+    .flip-card:hover .hint { border-color: var(--teal); color: var(--teal); transform: rotate(90deg); }
+    .product:hover { border-color: var(--teal-tint-strong); transform: translateY(-3px); box-shadow: 0 18px 40px -20px rgba(23,230,196,0.35); }
+  }
   .product .p-num { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--teal-soft); margin-bottom: 18px; display: block; }
   .product h3 { font-size: 25px; font-weight: 400; margin-bottom: 10px; }
   .product p { color: var(--ink-dim); font-size: 15px; margin: 0 0 18px; position: relative; }
@@ -235,6 +258,7 @@
   .capture-actions { display: grid; gap: 12px; margin-top: 8px; }
   .hashtag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
   .hashtag { font-size: 12.5px; font-weight: 700; color: var(--teal); background: var(--teal-tint); border: 1px solid var(--teal-tint-strong); padding: 5px 12px; border-radius: 20px; }
+  .btn .sm { display: none; }
   .capture-foot { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 13px; color: var(--ink-faint); }
   .capture-foot svg { flex: none; color: var(--teal); }
 
@@ -297,6 +321,29 @@
     .marks img.wp { height: 50px; }
   }
   @media (max-width: 380px) { .pill { display: none; } }
+  @media (max-width: 639px) {
+    .section { padding: 76px 0; }
+    .section-head { margin-bottom: 34px; }
+    .hero { padding: 56px 0 140px; }
+    .hero-emblem { right: -90px; width: 82vw; }
+    .event-meta { gap: 16px 28px; }
+    .flip-card { height: 140px; }
+    .flip-face { padding: 22px; }
+    .flip-front .num { font-size: 26px; min-width: 36px; }
+    .flip-front h3 { font-size: 19px; }
+    .product { padding: 26px 22px 24px; }
+    .capture-card { padding: 24px 20px; }
+    .capture-actions .btn { font-size: 14.5px; padding: 14px 16px; gap: 8px; }
+    .btn .lg { display: none; } .btn .sm { display: inline; }
+    .eyebrow-label { font-size: 11px; letter-spacing: 0.16em; white-space: nowrap; }
+    .eyebrow-label::after { width: 24px; }
+    .hashtag-row { gap: 6px; }
+    .hashtag { font-size: 11.5px; padding: 4px 10px; }
+    .panel { padding: 22px 18px; }
+    .follow-group { padding: 22px; }
+  }
+  /* skip the full-screen grain on touch devices: it costs scroll smoothness */
+  @media (hover: none), (max-width: 767px) { body::before { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .js .reveal { opacity: 1; transform: none; }
@@ -469,7 +516,7 @@
       <div class="capture-actions">
         <button class="btn btn-primary" type="button" onclick="document.getElementById('camera-input').click()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
-          Capture and add to our photo album
+          <span class="lg">Capture and add to our photo album</span><span class="sm">Capture &amp; add to our album</span>
         </button>
         <button class="btn btn-ghost" type="button" onclick="document.getElementById('gallery-input').click()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-9 9"/></svg>
@@ -477,7 +524,7 @@
         </button>
         <a class="btn btn-ghost btn-insta" href="https://www.instagram.com/itswharfedalepro" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-          Tag @itswharfedalepro on Instagram
+          <span class="lg">Tag @itswharfedalepro on Instagram</span><span class="sm">Tag @itswharfedalepro</span>
         </a>
       </div>
       <div class="capture-foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Photos upload instantly, even several at once.</div>
@@ -692,6 +739,28 @@ function sendFeedback(e) {
     entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
   }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
   els.forEach(function (el) { io.observe(el); });
+})();
+
+/* ---------- Mobile timeline: fills and lights stops as you scroll ---------- */
+(function () {
+  var mq = window.matchMedia("(max-width: 759px)");
+  var list = document.querySelector("#itinerary .stops");
+  if (!list) return;
+  var items = Array.prototype.slice.call(list.querySelectorAll(".stop"));
+  var ticking = false;
+  function update() {
+    ticking = false;
+    if (!mq.matches) return;
+    var anchor = window.innerHeight * 0.62;
+    var r = list.getBoundingClientRect();
+    var p = Math.max(0, Math.min(1, (anchor - r.top) / r.height));
+    list.style.setProperty("--progress", p.toFixed(3));
+    items.forEach(function (s) { s.classList.toggle("lit", s.getBoundingClientRect().top + 12 < anchor); });
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  update();
 })();
 
 /* ---------- Wave paths ---------- */
