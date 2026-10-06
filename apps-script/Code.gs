@@ -13,6 +13,10 @@
  * The album list is kept in Script Properties (one small entry per photo),
  * which is far faster than rewriting a Drive file on every upload.
  *
+ * Drive backup: run startDriveBackup() once. Every 5 minutes, separately from
+ * guest uploads, new Cloudinary photos are copied into the Drive "Framed"
+ * folder. Deleting a photo on the approval page removes its Drive copy too.
+ *
  * Setup / update:
  *   1. Paste this file into script.google.com and save.
  *   2. Project Settings > Script Properties: ADMIN_PIN = <your PIN>, and for
@@ -129,8 +133,11 @@ function delete_(body) {
   var props = PropertiesService.getScriptProperties();
   var raw = props.getProperty(ITEM + body.id);
   if (!raw) throw new Error('Photo not found');
-  if (JSON.parse(raw).c) cloudinaryDestroy_(body.id);
-  else {
+  var item = JSON.parse(raw);
+  if (item.c) {
+    cloudinaryDestroy_(body.id);
+    if (item.d) { try { DriveApp.getFileById(item.d).setTrashed(true); } catch (e) { /* backup already gone */ } }
+  } else {
     try { DriveApp.getFileById(body.id).setTrashed(true); } catch (e) { /* already gone from Drive */ }
   }
   props.deleteProperty(ITEM + body.id);
@@ -152,6 +159,56 @@ function cloudinaryDestroy_(publicId) {
   });
   var out = JSON.parse(res.getContentText() || '{}');
   if (out.result !== 'ok' && out.result !== 'not found') throw new Error('Cloudinary: ' + (out.error ? out.error.message : out.result));
+}
+
+// ---------------------------------------------------------------- Drive backup
+
+// Run once from the editor: turns on the 5-minute backup and does a first pass.
+function startDriveBackup() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'backupToDrive') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('backupToDrive').timeBased().everyMinutes(5).create();
+  backupToDrive();
+  Logger.log('Drive backup is on: new photos are copied every 5 minutes.');
+}
+
+// Run from the editor to switch the backup off again.
+function stopDriveBackup() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'backupToDrive') ScriptApp.deleteTrigger(t);
+  });
+  Logger.log('Drive backup is off.');
+}
+
+// Called by the timer. Copies Cloudinary photos that have no Drive copy yet.
+function backupToDrive() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return; // a previous run is still going
+  try {
+    var started = Date.now(), copied = 0;
+    var folder = getSubFolder_('Framed');
+    var props = PropertiesService.getScriptProperties();
+    var todo = allItems_().filter(function (it) { return it.c && !it.d; }).sort(function (a, b) { return a.t - b.t; });
+    for (var i = 0; i < todo.length && Date.now() - started < 4 * 60 * 1000; i++) {
+      var it = todo[i];
+      var url = 'https://res.cloudinary.com/' + CLOUD + '/image/upload/' + (it.v ? 'v' + it.v + '/' : '') + it.id + '.jpg';
+      var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+      if (res.getResponseCode() !== 200) continue; // deleted meanwhile, or try again next run
+      var name = 'Soundcheck ' + Utilities.formatDate(new Date(it.t), 'Asia/Dubai', 'yyyy-MM-dd HH.mm.ss') + ' ' + it.id.slice(-6) + '.jpg';
+      var file = folder.createFile(res.getBlob().setName(name));
+      // re-read so an approve/hide that happened meanwhile isn't overwritten
+      var fresh = props.getProperty(ITEM + it.id);
+      if (!fresh) { file.setTrashed(true); continue; } // deleted while copying
+      var cur = JSON.parse(fresh);
+      cur.d = file.getId();
+      saveItem_(it.id, cur);
+      copied++;
+    }
+    if (copied) Logger.log('Backed up ' + copied + ' photo(s) to Drive.');
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // Auto-approve switch on the approval page: new uploads go live immediately
@@ -178,7 +235,7 @@ function legacyUpload_(body) {
 // ---------------------------------------------------------------- album entries
 
 function saveItem_(id, it) {
-  PropertiesService.getScriptProperties().setProperty(ITEM + id, JSON.stringify({ s: it.s, w: it.w, h: it.h, t: it.t, at: it.at, v: it.v || 0, c: it.c ? 1 : 0 }));
+  PropertiesService.getScriptProperties().setProperty(ITEM + id, JSON.stringify({ s: it.s, w: it.w, h: it.h, t: it.t, at: it.at, v: it.v || 0, c: it.c ? 1 : 0, d: it.d || '' }));
 }
 
 function allItems_() {
