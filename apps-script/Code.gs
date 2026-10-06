@@ -1,7 +1,9 @@
 /**
  * Soundcheck · Wharfedale Pro Week Dubai: Live Album backend.
  *
- * - Guests upload their branded (framed) photo from the landing page, no sign-in.
+ * - Guests upload their branded (framed) photo straight to Cloudinary from the
+ *   landing page (fast, no sign-in), then register it here. Older pages that
+ *   upload to Google Drive are still accepted.
  * - New photos are "waiting" until approved on admin.html (PIN protected),
  *   unless the team turns on Auto-approve there. The team can also delete a
  *   photo, which moves it to the Drive bin (restorable for 30 days).
@@ -13,8 +15,9 @@
  *
  * Setup / update:
  *   1. Paste this file into script.google.com and save.
- *   2. Project Settings > Script Properties > ADMIN_PIN = <your PIN>
- *      (never stored in this file, because the repository is public).
+ *   2. Project Settings > Script Properties: ADMIN_PIN = <your PIN>, and for
+ *      Delete: CLOUDINARY_KEY / CLOUDINARY_SECRET (never stored in this file,
+ *      because the repository is public).
  *   3. Run setup() once, then Deploy > Manage deployments > Edit (pencil) >
  *      Version: New version > Deploy. The web app URL stays the same.
  */
@@ -24,6 +27,8 @@ var MAX_BYTES = 15 * 1024 * 1024;
 var LIST_CACHE_KEY = 'approved-list';
 var MAX_PIN_FAILS = 30; // per 10 minutes, then the admin page locks briefly
 var ITEM = 'P_';        // Script Property prefix for album entries
+var CLOUD = 'xccqslt2'; // Cloudinary cloud name (public)
+var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs from the soundcheck preset
 
 function setup() {
   var root = getFolder_();
@@ -40,7 +45,7 @@ function setup() {
 function doGet(e) {
   var p = (e && e.parameter) || {};
   try {
-    if (p.action === 'list') return json_({ ok: true, photos: approvedList_() });
+    if (p.action === 'list') return json_({ ok: true, photos: approvedList_(), auto: isAuto_() });
     if (p.action === 'admin') {
       checkPin_(p.pin);
       var items = allItems_().sort(function (a, b) { return b.t - a.t; });
@@ -57,6 +62,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+    if (body.action === 'register') return json_(register_(body));
     if (body.action === 'upload') return json_(upload_(body));
     if (body.action === 'review') return json_(review_(body));
     if (body.action === 'settings') return json_(settings_(body));
@@ -67,6 +73,19 @@ function doPost(e) {
   }
 }
 
+// A photo the guest's phone has just uploaded to Cloudinary
+function register_(body) {
+  var id = String(body.id || '');
+  if (!CLOUD_ID.test(id)) throw new Error('Bad photo id');
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(ITEM + id)) return { ok: true, approved: JSON.parse(props.getProperty(ITEM + id)).s === 'a' };
+  var auto = isAuto_(), now = Date.now();
+  saveItem_(id, { s: auto ? 'a' : 'p', w: Number(body.w) || 0, h: Number(body.h) || 0, t: now, at: auto ? now : 0, v: Number(body.v) || 0, c: 1 });
+  if (auto) CacheService.getScriptCache().remove(LIST_CACHE_KEY);
+  return { ok: true, approved: auto };
+}
+
+// Older page versions upload the photo itself, into Google Drive
 function upload_(body) {
   var framed = jpeg_(body.framed);
   var stamp = Utilities.formatDate(new Date(), 'Asia/Dubai', 'yyyy-MM-dd HH.mm.ss') + ' ' + Utilities.getUuid().slice(0, 4);
@@ -93,9 +112,12 @@ function review_(body) {
   it.s = status;
   if (status === 'a' && !it.at) it.at = Date.now();
   saveItem_(body.id, it);
-  var file = DriveApp.getFileById(body.id);
-  if (status === 'h') file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-  else file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  if (!it.c) {
+    // Drive-hosted photo from an older page: keep its sharing in step
+    var file = DriveApp.getFileById(body.id);
+    if (status === 'h') file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+    else file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  }
   CacheService.getScriptCache().remove(LIST_CACHE_KEY);
   return { ok: true };
 }
@@ -105,11 +127,31 @@ function review_(body) {
 function delete_(body) {
   checkPin_(body.pin);
   var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty(ITEM + body.id)) throw new Error('Photo not found');
-  try { DriveApp.getFileById(body.id).setTrashed(true); } catch (e) { /* already gone from Drive */ }
+  var raw = props.getProperty(ITEM + body.id);
+  if (!raw) throw new Error('Photo not found');
+  if (JSON.parse(raw).c) cloudinaryDestroy_(body.id);
+  else {
+    try { DriveApp.getFileById(body.id).setTrashed(true); } catch (e) { /* already gone from Drive */ }
+  }
   props.deleteProperty(ITEM + body.id);
   CacheService.getScriptCache().remove(LIST_CACHE_KEY);
   return { ok: true };
+}
+
+// Permanently removes the image from Cloudinary (signed with the API secret)
+function cloudinaryDestroy_(publicId) {
+  var props = PropertiesService.getScriptProperties();
+  var key = props.getProperty('CLOUDINARY_KEY'), secret = props.getProperty('CLOUDINARY_SECRET');
+  if (!key || !secret) throw new Error('Add CLOUDINARY_KEY and CLOUDINARY_SECRET in Script Properties to delete');
+  var ts = Math.floor(Date.now() / 1000);
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_1, 'public_id=' + publicId + '&timestamp=' + ts + secret, Utilities.Charset.UTF_8);
+  var sig = digest.map(function (b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
+  var res = UrlFetchApp.fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/destroy', {
+    method: 'post', muteHttpExceptions: true,
+    payload: { public_id: publicId, timestamp: String(ts), api_key: key, signature: sig }
+  });
+  var out = JSON.parse(res.getContentText() || '{}');
+  if (out.result !== 'ok' && out.result !== 'not found') throw new Error('Cloudinary: ' + (out.error ? out.error.message : out.result));
 }
 
 // Auto-approve switch on the approval page: new uploads go live immediately
@@ -135,7 +177,7 @@ function legacyUpload_(body) {
 // ---------------------------------------------------------------- album entries
 
 function saveItem_(id, it) {
-  PropertiesService.getScriptProperties().setProperty(ITEM + id, JSON.stringify({ s: it.s, w: it.w, h: it.h, t: it.t, at: it.at }));
+  PropertiesService.getScriptProperties().setProperty(ITEM + id, JSON.stringify({ s: it.s, w: it.w, h: it.h, t: it.t, at: it.at, v: it.v || 0, c: it.c ? 1 : 0 }));
 }
 
 function allItems_() {
@@ -157,7 +199,7 @@ function approvedList_() {
   var list = allItems_()
     .filter(function (it) { return it.s === 'a'; })
     .sort(function (a, b) { return b.t - a.t; })
-    .map(function (it) { return { id: it.id, w: it.w, h: it.h, t: it.t, at: it.at }; });
+    .map(function (it) { return { id: it.id, w: it.w, h: it.h, t: it.t, at: it.at, v: it.v || 0, c: it.c ? 1 : 0 }; });
   cache.put(LIST_CACHE_KEY, JSON.stringify(list), 30);
   return list;
 }

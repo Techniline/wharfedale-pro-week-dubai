@@ -76,7 +76,11 @@ var SHOW_MS = 8000;      // how long each photo stays up
 var REFRESH_MS = 15000;  // how often to check for newly approved photos
 
 var photos = [], queue = [], seen = {}, cur = -1, slideEl = 0, timer = null;
-function driveImg(id) { return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(id) + "&sz=w2400"; }
+// Cloudinary photos come resized for the screen; older ones load from Google Drive
+function photoUrl(p, w) {
+  if (p.c) return "https://res.cloudinary.com/xccqslt2/image/upload/f_auto,q_auto,c_limit,w_" + w + "/" + (p.v ? "v" + p.v + "/" : "") + p.id + ".jpg";
+  return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(p.id) + "&sz=w" + w;
+}
 
 function refresh() {
   return fetch(UPLOAD_URL + "?action=list&t=" + Date.now())
@@ -115,7 +119,7 @@ function pick() {
 function next() {
   var p = pick();
   if (!p) { timer = null; return; }
-  var url = driveImg(p.id);
+  var url = photoUrl(p, 2400);
   var pre = new Image();
   pre.onload = function () {
     slideEl = 1 - slideEl;

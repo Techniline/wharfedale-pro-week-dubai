@@ -148,7 +148,11 @@ var EMPTY = { p: "No new photos waiting. New uploads appear here automatically."
 
 function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
 function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
-function thumb(id, w) { return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(id) + "&sz=w" + w; }
+// Cloudinary photos come resized for the screen; older ones load from Google Drive
+function photoUrl(p, w) {
+  if (p.c) return "https://res.cloudinary.com/xccqslt2/image/upload/f_auto,q_auto,c_limit,w_" + w + "/" + (p.v ? "v" + p.v + "/" : "") + p.id + ".jpg";
+  return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(p.id) + "&sz=w" + w;
+}
 function ago(t) {
   var m = Math.round((Date.now() - t) / 60000);
   return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago";
@@ -184,7 +188,7 @@ function render() {
     card.className = "card"; card.dataset.id = it.id;
     var b = document.createElement("button");
     b.className = "thumb"; b.type = "button"; b.setAttribute("aria-label", "View photo");
-    b.style.backgroundImage = "url('" + thumb(it.id, 500) + "')";
+    b.style.backgroundImage = "url('" + photoUrl(it, 500) + "')";
     b.onclick = function () { openView(it); };
     var meta = document.createElement("div");
     meta.className = "meta"; meta.textContent = ago(it.t);
@@ -296,7 +300,7 @@ function removePhoto(it) {
 
 function openView(it) {
   viewing = it;
-  document.getElementById("view-img").src = thumb(it.id, 1600);
+  document.getElementById("view-img").src = photoUrl(it, 1600);
   var a = actions(it);
   a.appendChild(delBtn(it));
   a.id = "view-acts";
