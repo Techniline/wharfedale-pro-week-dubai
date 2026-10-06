@@ -744,7 +744,7 @@
   </div>
 </div>
 
-<script src="assets/frame.js?v=6"></script>
+<script src="assets/frame.js?v=7"></script>
 <script>
 function togglePanel(id) {
   var panel = document.getElementById(id);
@@ -859,7 +859,7 @@ function pill(state, detail) {
   el.hidden = state === "hide";
   var txt = el.querySelector(".upl-text");
   if (state === "up") {
-    txt.textContent = "Uploading" + (queue.length > 1 ? " " + queue.length + " photos" : "") + "… keep this page open";
+    txt.textContent = "Uploading" + (queue.length > 1 ? " " + queue.length + " photos" : " your photo") + "…";
   } else if (state === "done") {
     txt.textContent = sentLive === sentOk
       ? "✓ " + (sentOk > 1 ? sentOk + " photos" : "Photo") + " added to the album"

@@ -138,28 +138,14 @@
       corner(ctx, W - inset, inset, size, -1, 1, size * 0.25);
       ctx.restore();
 
-      // ---- sound-wave accent along the top edge of the bar (fades out at both ends)
-      function wave(amp, period, phase, width, alpha, glowPx) {
-        ctx.save();
-        ctx.beginPath();
-        for (var px = 0; px <= W; px += 4) {
-          var env = Math.pow(Math.sin(Math.PI * px / W), 0.7);
-          var py = ph + amp * env * Math.sin(px / period * Math.PI * 2 + phase);
-          if (px === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.strokeStyle = 'rgba(23,230,196,' + alpha + ')';
-        ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        if (glowPx) { ctx.shadowColor = 'rgba(23,230,196,0.9)'; ctx.shadowBlur = glowPx; }
-        ctx.stroke();
-        ctx.restore();
-      }
-      wave(bar * 0.11, W / 4.2, 1.3, Math.max(1.5, W * 0.0014), 0.35, 0);
-      wave(bar * 0.075, W / 7, 0, Math.max(2, W * 0.0024), 0.95, W * 0.008);
+      // thin teal line along the top edge of the bar
+      ctx.fillStyle = 'rgba(23,230,196,0.55)';
+      ctx.fillRect(0, ph, W, Math.max(2, Math.round(W * 0.0022)));
 
       var pad = W * 0.045, mid = ph + bar / 2;
 
       // ---- Wharfedale Pro logo, larger than the bar: the script sits in the bar
-      // while the chevron rises over the bottom of the photo (and over the wave)
+      // while the chevron rises over the bottom of the photo
       var lh = bar * (portrait ? 1.08 : 1.25), lw = lh * (logo.naturalWidth || 667) / (logo.naturalHeight || 540);
       var ly = H - bar * 0.1 - lh;
       var lcx = pad + lw / 2, lcy = ly + lh * 0.3;
