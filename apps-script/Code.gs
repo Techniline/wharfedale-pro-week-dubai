@@ -45,7 +45,7 @@ function setup() {
 function doGet(e) {
   var p = (e && e.parameter) || {};
   try {
-    if (p.action === 'list') return json_({ ok: true, photos: approvedList_(), auto: isAuto_() });
+    if (p.action === 'list') return json_(publicList_());
     if (p.action === 'admin') {
       checkPin_(p.pin);
       var items = allItems_().sort(function (a, b) { return b.t - a.t; });
@@ -158,6 +158,7 @@ function cloudinaryDestroy_(publicId) {
 function settings_(body) {
   checkPin_(body.pin);
   PropertiesService.getScriptProperties().setProperty('AUTO_APPROVE', body.auto ? '1' : '0');
+  CacheService.getScriptCache().remove(LIST_CACHE_KEY);
   return { ok: true, auto: !!body.auto };
 }
 
@@ -192,15 +193,23 @@ function allItems_() {
   return out;
 }
 
-function approvedList_() {
+// What every open guest page and the big screen poll for. Cached, including the
+// Auto-approve flag, so busy evenings don't run into the free Script Properties
+// read quota (50,000 a day on a free Google account).
+function publicList_() {
   var cache = CacheService.getScriptCache();
   var hit = cache.get(LIST_CACHE_KEY);
   if (hit) return JSON.parse(hit);
+  var out = { ok: true, photos: approvedList_(), auto: isAuto_() };
+  cache.put(LIST_CACHE_KEY, JSON.stringify(out), 30);
+  return out;
+}
+
+function approvedList_() {
   var list = allItems_()
     .filter(function (it) { return it.s === 'a'; })
     .sort(function (a, b) { return b.t - a.t; })
     .map(function (it) { return { id: it.id, w: it.w, h: it.h, t: it.t, at: it.at, v: it.v || 0, c: it.c ? 1 : 0 }; });
-  cache.put(LIST_CACHE_KEY, JSON.stringify(list), 30);
   return list;
 }
 
