@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#060908">
+<title>Soundcheck · Approve photos</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #060908; --card: #0f1614; --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77;
+    --hair: rgba(230,245,240,0.10); --hair-strong: rgba(230,245,240,0.18);
+    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693; --tint: rgba(23,230,196,0.10); --tint-strong: rgba(23,230,196,0.25);
+    --red: #ff8a95; --red-bg: #2a1517; --ease: cubic-bezier(.2,.7,.2,1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1, h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 400; margin: 0; }
+  button { font: inherit; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  [hidden] { display: none !important; }
+
+  /* PIN screen */
+  .lock { min-height: 100svh; display: grid; place-items: center; padding: 24px; background: radial-gradient(60% 50% at 50% 30%, rgba(23,230,196,0.12), transparent 70%); }
+  .lock form { width: 100%; max-width: 340px; text-align: center; }
+  .lock img { height: 72px; width: auto; margin-bottom: 22px; }
+  .lock h1 { font-size: 34px; font-weight: 300; }
+  .lock h1 i { display: block; font-size: 15px; margin-top: 6px; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lock p { color: var(--dim); font-size: 14px; margin: 20px 0 14px; }
+  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.35); color: var(--ink); }
+  .lock input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--tint); }
+  .lock .err { color: var(--red); font-size: 13px; min-height: 20px; margin: 10px 0 0; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; border-radius: 999px; border: 1px solid transparent; font-weight: 700; font-size: 15px; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: #031210; margin-top: 12px; }
+
+  /* Header */
+  .top { position: sticky; top: 0; z-index: 10; background: rgba(6,9,8,0.86); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--hair); padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
+  .top-row { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .top h2 { font-size: 21px; }
+  .top .live { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--teal); text-decoration: none; border: 1px solid var(--tint-strong); border-radius: 999px; padding: 7px 12px; white-space: nowrap; }
+  .tabs { max-width: 1100px; margin: 12px auto 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--hair-strong); background: transparent; color: var(--dim); font-size: 13px; font-weight: 700; cursor: pointer; }
+  .tabs button.on { border-color: var(--teal); color: var(--teal); background: var(--tint); }
+  .tabs b { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: var(--hair-strong); color: var(--ink); font-size: 11px; }
+  .tabs button.on b { background: var(--teal); color: #031210; }
+
+  /* Grid */
+  main { max-width: 1100px; margin: 0 auto; padding: 16px 12px calc(40px + env(safe-area-inset-bottom)); }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--hair); display: flex; flex-direction: column; animation: rise .35s var(--ease); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .card.leaving { opacity: 0; transform: scale(0.96); transition: all .25s var(--ease); }
+  .thumb { aspect-ratio: 1; background: #0b100f center / cover no-repeat; cursor: zoom-in; border: 0; padding: 0; }
+  .meta { font-size: 11px; color: var(--faint); padding: 8px 10px 0; }
+  .acts { display: flex; gap: 6px; padding: 8px; }
+  .acts button { flex: 1; min-height: 40px; padding: 0 6px; border-radius: 10px; border: 0; font-weight: 800; font-size: 13px; white-space: nowrap; cursor: pointer; }
+  .acts .ok { flex: 1.4; }
+  .ok { background: var(--teal); color: #031210; }
+  .no { background: var(--red-bg); color: var(--red); }
+  .acts .no:only-child, .acts .ok:only-child { flex: 1; }
+  .empty { text-align: center; color: var(--dim); padding: 60px 20px; border: 1px dashed var(--hair-strong); border-radius: 16px; }
+
+  /* Preview */
+  .view { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(2,4,3,0.95); }
+  .view img { max-width: 100%; max-height: calc(100svh - 120px); border-radius: 10px; }
+  .view .acts { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
+  .view .acts button { min-height: 50px; font-size: 15px; }
+  .view .close { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair-strong); background: rgba(15,22,20,0.85); color: var(--ink); font-size: 20px; cursor: pointer; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 40; padding: 12px 18px; border-radius: 12px; background: rgba(15,22,20,0.95); border: 1px solid var(--tint-strong); font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<section class="lock" id="lock">
+  <form id="pin-form" autocomplete="off">
+    <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+    <h1>Soundcheck<i>Wharfedale Pro Week · Dubai</i></h1>
+    <p>Enter the team PIN to review guest photos.</p>
+    <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" aria-label="PIN" required>
+    <button class="btn btn-primary" type="submit">Unlock</button>
+    <p class="err" id="pin-err" role="alert"></p>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-row">
+      <h2>Approve photos</h2>
+      <a class="live" href="live.html" target="_blank" rel="noopener">Open big screen ↗</a>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="on" data-tab="p" type="button">Waiting <b id="c-p">0</b></button>
+      <button data-tab="a" type="button">Approved <b id="c-a">0</b></button>
+      <button data-tab="h" type="button">Hidden <b id="c-h">0</b></button>
+    </nav>
+  </header>
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden></div>
+  </main>
+</div>
+
+<div class="view" id="view" hidden>
+  <button class="close" type="button" aria-label="Close" onclick="closeView()">✕</button>
+  <img id="view-img" alt="">
+  <div class="acts" id="view-acts"></div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// Same Apps Script web app the landing page uploads to
+var UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
+var pin = "", items = [], tab = "p", viewing = null;
+var EMPTY = { p: "No new photos waiting. New uploads appear here automatically.", a: "Nothing approved yet.", h: "No hidden photos." };
+
+function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function thumb(id, w) { return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(id) + "&sz=w" + w; }
+function ago(t) {
+  var m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago";
+}
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 2200);
+}
+
+function load() {
+  return fetch(UPLOAD_URL + "?action=admin&pin=" + encodeURIComponent(pin) + "&t=" + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error || "Couldn't load photos");
+      if (!Array.isArray(res.photos)) throw new Error("The photo service needs updating (new version not deployed yet).");
+      items = res.photos;
+      render();
+      return true;
+    });
+}
+
+function render() {
+  ["p", "a", "h"].forEach(function (s) {
+    document.getElementById("c-" + s).textContent = items.filter(function (it) { return it.s === s; }).length;
+  });
+  var list = items.filter(function (it) { return it.s === tab; });
+  var grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  list.forEach(function (it) {
+    var card = document.createElement("div");
+    card.className = "card"; card.dataset.id = it.id;
+    var b = document.createElement("button");
+    b.className = "thumb"; b.type = "button"; b.setAttribute("aria-label", "View photo");
+    b.style.backgroundImage = "url('" + thumb(it.id, 500) + "')";
+    b.onclick = function () { openView(it); };
+    var meta = document.createElement("div");
+    meta.className = "meta"; meta.textContent = ago(it.t);
+    card.appendChild(b); card.appendChild(meta); card.appendChild(actions(it));
+    grid.appendChild(card);
+  });
+  var empty = document.getElementById("empty");
+  empty.hidden = list.length > 0;
+  empty.textContent = EMPTY[tab];
+}
+
+function actions(it) {
+  var wrap = document.createElement("div");
+  wrap.className = "acts";
+  if (it.s !== "a") wrap.appendChild(btn("ok", it.s === "h" ? "Restore" : "✓ Approve", function () { review(it, "a"); }));
+  if (it.s !== "h") wrap.appendChild(btn("no", it.s === "a" ? "Hide from album" : "✕ Hide", function () { review(it, "h"); }));
+  return wrap;
+}
+function btn(cls, label, fn) {
+  var b = document.createElement("button");
+  b.type = "button"; b.className = cls; b.textContent = label; b.onclick = fn;
+  return b;
+}
+
+function review(it, status) {
+  var prev = it.s;
+  it.s = status;
+  var card = document.querySelector('.card[data-id="' + it.id + '"]');
+  if (card) card.classList.add("leaving");
+  closeView();
+  setTimeout(render, 220);
+  toast(status === "a" ? "Approved: it's on the screen and website" : "Hidden");
+  fetch(UPLOAD_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "review", pin: pin, id: it.id, status: status })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (res) { if (!res.ok) throw new Error(res.error); })
+    .catch(function (e) { it.s = prev; render(); toast("Didn't save: " + (e.message || "try again")); });
+}
+
+function openView(it) {
+  viewing = it;
+  document.getElementById("view-img").src = thumb(it.id, 1600);
+  var a = actions(it);
+  a.id = "view-acts";
+  document.getElementById("view-acts").replaceWith(a);
+  document.getElementById("view").hidden = false;
+}
+function closeView() { document.getElementById("view").hidden = true; viewing = null; }
+document.getElementById("view").addEventListener("click", function (e) { if (e.target === this) closeView(); });
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeView(); });
+
+document.querySelectorAll(".tabs button").forEach(function (b) {
+  b.onclick = function () {
+    tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    render();
+  };
+});
+
+function unlock(p) {
+  pin = p;
+  return load().then(function () {
+    store("sc-pin", pin);
+    document.getElementById("lock").hidden = true;
+    document.getElementById("app").hidden = false;
+    setInterval(function () { if (!document.hidden && !viewing) load().catch(function () {}); }, 15000);
+  });
+}
+
+document.getElementById("pin-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var err = document.getElementById("pin-err");
+  err.textContent = "Checking…";
+  unlock(document.getElementById("pin").value.trim())
+    .then(function () { err.textContent = ""; })
+    .catch(function (e2) { err.textContent = e2.message || "Wrong PIN"; store("sc-pin"); });
+});
+
+// Stay unlocked for this browser tab session
+var saved = recall("sc-pin");
+if (saved) unlock(saved).catch(function () { store("sc-pin"); });
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Soundcheck · Live Album</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #030505; --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77;
+    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; overflow: hidden; }
+  body.idle { cursor: none; }
+
+  /* Two stacked slides cross-fade into each other */
+  .slide { position: fixed; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity 1.4s var(--ease); }
+  .slide.on { opacity: 1; }
+  .slide .bg { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: blur(48px) brightness(0.32) saturate(1.25); transform: scale(1.05); }
+  .slide img { position: relative; max-width: 94vw; max-height: 90vh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 40px 120px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(23,230,196,0.18); }
+  .slide.on img { animation: drift 9s linear forwards; }
+  @keyframes drift { from { transform: scale(1); } to { transform: scale(1.035); } }
+
+  .count { position: fixed; top: 3.2vh; left: 3vw; z-index: 5; display: flex; align-items: center; gap: 0.9vw; font-size: max(12px, 1vw); font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--teal); text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+  .count::before { content: ""; width: 0.65vw; height: 0.65vw; min-width: 8px; min-height: 8px; border-radius: 50%; background: #ff4d5e; box-shadow: 0 0 1vw #ff4d5e; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .count[hidden] { display: none; }
+
+  /* Waiting screen before the first approved photo */
+  .empty { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; background: radial-gradient(50% 60% at 50% 45%, rgba(23,230,196,0.12), transparent 70%), var(--bg); transition: opacity 1s var(--ease); }
+  .empty.gone { opacity: 0; pointer-events: none; }
+  .empty img { height: 22vh; width: auto; margin: 0 auto 4vh; }
+  .empty h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 7vw; line-height: 1; margin: 0; letter-spacing: -0.02em; }
+  .empty h1 i { display: block; margin-top: 1.4vh; font-size: 2.4vw; font-weight: 400; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .empty p { margin: 5vh 0 0; font-size: 1.3vw; letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+  .empty .host { margin-top: 2vh; display: inline-flex; align-items: center; gap: 1vw; font-size: 0.9vw; letter-spacing: 0.26em; text-transform: uppercase; color: var(--faint); font-weight: 800; }
+  .empty .host img { height: 2.4vh; margin: 0; }
+
+  .fs { position: fixed; right: 3vw; top: 2.6vh; z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 999px; border: 1px solid rgba(23,230,196,0.4); background: rgba(6,9,8,0.8); color: var(--ink); font: 700 15px 'Manrope', sans-serif; cursor: pointer; transition: opacity .4s; }
+  .fs:hover { border-color: var(--teal); color: var(--teal); }
+  body.idle .fs, body.full .fs { opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .slide.on img { animation: none; } .slide { transition-duration: .01s; } }
+</style>
+</head>
+<body>
+
+<div class="slide" id="s0"><div class="bg"></div><img alt=""></div>
+<div class="slide" id="s1"><div class="bg"></div><img alt=""></div>
+
+<div class="empty" id="empty">
+  <div>
+    <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+    <h1>Soundcheck<i>Wharfedale Pro Week · Dubai</i></h1>
+    <p>Tonight's photos will appear here</p>
+    <div class="host">Hosted by <img src="assets/techniline.png" alt="Techniline"></div>
+  </div>
+</div>
+
+<div class="count" id="count" hidden>Live album</div>
+<button class="fs" id="fs" type="button">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  Go full screen
+</button>
+
+<script>
+// Same Apps Script web app the landing page uploads to
+var UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
+var SHOW_MS = 8000;      // how long each photo stays up
+var REFRESH_MS = 15000;  // how often to check for newly approved photos
+
+var photos = [], queue = [], seen = {}, cur = -1, slideEl = 0, timer = null;
+function driveImg(id) { return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(id) + "&sz=w2400"; }
+
+function refresh() {
+  return fetch(UPLOAD_URL + "?action=list&t=" + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res || !res.ok) return;
+      var list = res.photos || [];
+      var ids = {};
+      list.forEach(function (p) { ids[p.id] = true; });
+      // newly approved photos jump the queue so they show up next
+      var fresh = list.filter(function (p) { return !seen[p.id]; });
+      fresh.forEach(function (p) { seen[p.id] = true; });
+      queue = fresh.concat(queue).filter(function (p) { return ids[p.id]; });
+      photos = list;
+      var c = document.getElementById("count");
+      c.hidden = !list.length;
+      c.textContent = "Live album · " + list.length + (list.length === 1 ? " photo" : " photos");
+      if (list.length && !timer) next();
+      if (!list.length) { stop(); document.getElementById("empty").classList.remove("gone"); }
+    })
+    .catch(function () {});
+}
+
+function stop() {
+  clearTimeout(timer); timer = null;
+  document.querySelectorAll(".slide").forEach(function (s) { s.classList.remove("on"); });
+}
+
+function pick() {
+  if (queue.length) return queue.shift();
+  if (!photos.length) return null;
+  cur = (cur + 1) % photos.length;
+  return photos[cur];
+}
+
+function next() {
+  var p = pick();
+  if (!p) { timer = null; return; }
+  var url = driveImg(p.id);
+  var pre = new Image();
+  pre.onload = function () {
+    slideEl = 1 - slideEl;
+    var s = document.getElementById("s" + slideEl), other = document.getElementById("s" + (1 - slideEl));
+    s.querySelector(".bg").style.backgroundImage = "url('" + url + "')";
+    var img = s.querySelector("img");
+    img.src = url;
+    // restart the slow zoom
+    s.classList.remove("on"); void s.offsetWidth;
+    s.classList.add("on"); other.classList.remove("on");
+    document.getElementById("empty").classList.add("gone");
+    timer = setTimeout(next, SHOW_MS);
+  };
+  pre.onerror = function () { timer = setTimeout(next, 500); };
+  pre.src = url;
+  timer = timer || -1;
+}
+
+// Full screen + hide the cursor when the mouse is still
+document.getElementById("fs").addEventListener("click", function () {
+  var el = document.documentElement;
+  (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el);
+});
+document.addEventListener("fullscreenchange", function () { document.body.classList.toggle("full", !!document.fullscreenElement); });
+var idleT;
+function wake() { document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(function () { document.body.classList.add("idle"); }, 3000); }
+document.addEventListener("mousemove", wake); wake();
+
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
