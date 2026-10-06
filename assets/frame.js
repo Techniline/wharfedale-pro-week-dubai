@@ -95,9 +95,21 @@
 
       var pad = W * 0.045, mid = ph + bar / 2;
 
-      // Wharfedale Pro logo
-      var lh = bar * 0.68, lw = lh * (logo.naturalWidth || 667) / (logo.naturalHeight || 540);
-      ctx.drawImage(logo, pad, mid - lh / 2, lw, lh);
+      // Wharfedale Pro logo, larger than the bar: the "Wharfedale Pro" script
+      // sits in the bar while the chevron rises over the bottom of the photo
+      var lh = bar * (portrait ? 1.08 : 1.25), lw = lh * (logo.naturalWidth || 667) / (logo.naturalHeight || 540);
+      var ly = H - bar * 0.1 - lh;
+      var lcx = pad + lw / 2, lcy = ly + lh * 0.3;
+      var shade = ctx.createRadialGradient(lcx, lcy, 0, lcx, lcy, lw * 0.85);
+      shade.addColorStop(0, 'rgba(4,8,7,0.62)');
+      shade.addColorStop(0.55, 'rgba(4,8,7,0.3)');
+      shade.addColorStop(1, 'rgba(4,8,7,0)');
+      ctx.fillStyle = shade;
+      ctx.fillRect(lcx - lw, lcy - lw, lw * 2, lw * 2);
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = W * 0.012; ctx.shadowOffsetY = W * 0.002;
+      ctx.drawImage(logo, pad, ly, lw, lh);
+      ctx.restore();
       var x = pad + lw + W * 0.026;
 
       // divider
@@ -105,8 +117,24 @@
       ctx.fillRect(x, mid - bar * 0.25, Math.max(1, W * 0.0015), bar * 0.5);
       x += W * 0.026;
 
-      // Soundcheck / Wharfedale Pro Week - Dubai
+      // Hosted by Techniline block size, so the title can be fitted beside it
+      var hSize = W * (portrait ? 0.016 : 0.0115), tlh = W * (portrait ? 0.032 : 0.024);
+      var tlw = tlh * tl.naturalWidth / tl.naturalHeight;
+      var right = W - pad;
+      ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
+      var spacing = hSize * 0.25, label = 'HOSTED BY';
+      var hostW = Math.max(tlw, spacedWidth(ctx, label, spacing));
+
+      // Soundcheck / Wharfedale Pro Week - Dubai, shrunk if it would reach the host block
       var tSize = W * (portrait ? 0.06 : 0.04), sSize = W * (portrait ? 0.0285 : 0.021);
+      // middle dot built from its code so the file stays plain ASCII
+      var sub = 'Wharfedale Pro Week ' + String.fromCharCode(183) + ' Dubai';
+      ctx.font = 'italic 400 ' + sSize + 'px Fraunces, Georgia, serif';
+      var subW = ctx.measureText(sub).width;
+      ctx.font = '400 ' + tSize + 'px Fraunces, Georgia, serif';
+      var room = (right - hostW - W * 0.03) - x;
+      var fit = Math.min(1, room / Math.max(subW, ctx.measureText('Soundcheck').width));
+      tSize *= fit; sSize *= fit;
       var blockH = tSize * 0.95 + W * 0.006 + sSize;
       var top = mid - blockH / 2;
       ctx.textBaseline = 'alphabetic';
@@ -114,8 +142,6 @@
       ctx.font = '400 ' + tSize + 'px Fraunces, Georgia, serif';
       ctx.fillText('Soundcheck', x, top + tSize * 0.78);
       ctx.font = 'italic 400 ' + sSize + 'px Fraunces, Georgia, serif';
-      // middle dot built from its code so the file stays plain ASCII
-      var sub = 'Wharfedale Pro Week ' + String.fromCharCode(183) + ' Dubai';
       var sw = ctx.measureText(sub).width;
       var grad = ctx.createLinearGradient(x, 0, x + sw, 0);
       grad.addColorStop(0, '#8ff5e3'); grad.addColorStop(0.45, TEAL); grad.addColorStop(1, '#00a693');
@@ -123,12 +149,8 @@
       ctx.fillText(sub, x, top + tSize * 0.95 + W * 0.006 + sSize * 0.8);
 
       // Hosted by Techniline, right-aligned
-      var hSize = W * (portrait ? 0.019 : 0.0115), tlh = W * (portrait ? 0.038 : 0.024);
-      var tlw = tlh * tl.naturalWidth / tl.naturalHeight;
-      var right = W - pad;
       ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      var spacing = hSize * 0.25, label = 'HOSTED BY';
       var hb = (hSize + W * 0.008 + tlh);
       drawSpaced(ctx, label, right - spacedWidth(ctx, label, spacing), mid - hb / 2 + hSize * 0.8, spacing);
       ctx.drawImage(tl, right - tlw, mid - hb / 2 + hSize + W * 0.008, tlw, tlh);
