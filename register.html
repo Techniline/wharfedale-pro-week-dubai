@@ -199,7 +199,7 @@ var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9N
 var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var form = $("form"), sel = $("slot"), btn = $("submit");
-var slots = [], cap = 30, busy = false, ticket = null;
+var slots = [], cap = 35, busy = false, ticket = null;
 
 function save(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 function load(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }

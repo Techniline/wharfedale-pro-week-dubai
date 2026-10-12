@@ -42,7 +42,7 @@ var CLOUD = 'xccqslt2'; // Cloudinary cloud name (public)
 var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs from the soundcheck preset
 
 var SLOT_COUNT = 4;     // Immersive Audio Experience slots
-var SLOT_CAP = 30;      // guests per slot
+var SLOT_CAP = 35;      // guests per slot
 var RAFFLE_PREFIX = 'SC-';
 var RAFFLE_WINNERS = 2; // winners in the on-stage draw
 var REG = 'R_';         // Script Property prefix: one entry per booking, by raffle number
