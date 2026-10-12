@@ -21,7 +21,8 @@
  * Experience slots and get a raffle number (SC-001, SC-002, ...) in order.
  * Bookings run one at a time under a lock, so a slot can never go past its
  * capacity, and the same email or phone number can never get a second number.
- * Every booking is also written to the "Soundcheck Registrations" Google Sheet.
+ * Bookings are copied to the "Soundcheck Registrations" Google Sheet in the
+ * background (admin Bookings tab and the 5-minute timer), never while a guest waits.
  *
  * Setup / update:
  *   1. Paste this file into script.google.com and save.
@@ -57,7 +58,10 @@ function setup() {
   var moved = migrateIndexFile_();
   Logger.log('Photos will be saved to: ' + root.getUrl());
   Logger.log('Album entries: ' + allItems_().length + (moved ? ' (moved ' + moved + ' from album-index.json)' : ''));
-  Logger.log('Registrations sheet: ' + getSheet_().getParent().getUrl() + ' (' + allRegs_().length + ' booked)');
+  PropertiesService.getScriptProperties().deleteProperty('REG_COUNTS'); // recount once from the bookings
+  PropertiesService.getScriptProperties().setProperty('SHEET_DIRTY', '1');
+  syncBookingsSheet();
+  Logger.log('Registrations sheet: ' + getSheet_().getParent().getUrl() + ' (' + allRegs_().length + ' booked, seats taken per slot: ' + counts_().join(' / ') + ')');
   Logger.log(getPin_() ? 'ADMIN_PIN is set.' : 'ADMIN_PIN is NOT set yet: add it under Project Settings > Script Properties.');
 }
 
@@ -70,6 +74,7 @@ function doGet(e) {
     if (p.action === 'slots') return json_(publicSlots_());
     if (p.action === 'regs') {
       checkPin_(p.pin);
+      syncBookingsSheet();
       return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_(), skipped: skipped_(), maxWinners: RAFFLE_WINNERS });
     }
     if (p.action === 'admin') {
@@ -209,6 +214,7 @@ function stopDriveBackup() {
 
 // Called by the timer. Copies Cloudinary photos that have no Drive copy yet.
 function backupToDrive() {
+  syncBookingsSheet();
   // A cache flag rather than the script lock, so a long backup never holds up slot bookings
   var cache = CacheService.getScriptCache();
   if (cache.get('backup-running')) return; // a previous run is still going
@@ -273,10 +279,20 @@ function publicSlots_() {
 }
 
 function slotState_() {
+  return counts_().map(function (c, i) { return { n: i + 1, taken: c, left: Math.max(0, SLOT_CAP - c) }; });
+}
+
+// Seats taken per slot, kept as one running tally (updated under the booking
+// lock) so checking a slot never has to count through the bookings.
+function counts_() {
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty('REG_COUNTS');
+  if (raw) return JSON.parse(raw);
   var taken = [];
   for (var i = 0; i < SLOT_COUNT; i++) taken.push(0);
   allRegs_().forEach(function (r) { if (r.s >= 1 && r.s <= SLOT_COUNT) taken[r.s - 1]++; });
-  return taken.map(function (c, i) { return { n: i + 1, taken: c, left: Math.max(0, SLOT_CAP - c) }; });
+  props.setProperty('REG_COUNTS', JSON.stringify(taken));
+  return taken;
 }
 
 function book_(body) {
@@ -305,8 +321,9 @@ function book_(body) {
         : 'This phone number is already registered. Each guest gets one raffle number.');
     }
     if (!isRegOpen_()) throw new Error('Registration is closed.');
-    var state = slotState_();
-    if (state[slot - 1].left <= 0) {
+    var taken = counts_();
+    if (taken[slot - 1] >= SLOT_CAP) {
+      var state = slotState_();
       return { ok: false, full: true, error: 'Slot ' + slot + ' just filled up. Please pick another slot.', slots: state };
     }
     var n = Number(props.getProperty('REG_NEXT') || 1);
@@ -316,9 +333,11 @@ function book_(body) {
     batch[REG_EMAIL + email] = String(n);
     batch[REG_PHONE + phone] = String(n);
     batch.REG_NEXT = String(n + 1);
+    taken[slot - 1]++;
+    batch.REG_COUNTS = JSON.stringify(taken);
+    batch.SHEET_DIRTY = '1'; // the Google Sheet catches up in the background, not while the guest waits
     props.setProperties(batch);
     CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
-    try { sheetAppend_(reg); } catch (e) { console.error('Sheet write failed: ' + e); } // the booking itself is already saved
     return { ok: true, ticket: ticket_(reg) };
   } finally {
     lock.releaseLock();
@@ -358,9 +377,10 @@ function regDelete_(body) {
     props.deleteProperty(REG_EMAIL + r.em);
     props.deleteProperty(REG_PHONE + r.ph);
     var w = winners_().filter(function (x) { return x !== r.n; });
-    props.setProperty('REG_WINNERS', JSON.stringify(w));
+    var taken = counts_();
+    if (taken[r.s - 1] > 0) taken[r.s - 1]--;
+    props.setProperties({ REG_WINNERS: JSON.stringify(w), REG_COUNTS: JSON.stringify(taken), SHEET_DIRTY: '1' });
     CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
-    try { sheetMark_(r.n, 'Cancelled'); } catch (e) { console.error('Sheet update failed: ' + e); }
     return { ok: true };
   } finally {
     lock.releaseLock();
@@ -385,8 +405,7 @@ function winner_(body) {
       list.push(n);
     }
   }
-  props.setProperty('REG_WINNERS', JSON.stringify(list));
-  props.setProperty('REG_SKIPPED', JSON.stringify(skipped));
+  props.setProperties({ REG_WINNERS: JSON.stringify(list), REG_SKIPPED: JSON.stringify(skipped), SHEET_DIRTY: '1' });
   return { ok: true, winners: list, skipped: skipped };
 }
 
@@ -445,15 +464,33 @@ function getSheet_() {
   return sh;
 }
 
-function sheetAppend_(r) {
-  getSheet_().appendRow([raffleNo_(r.n), 'Slot ' + r.s, r.name, r.co, r.em, "'" + r.ph,
-    Utilities.formatDate(new Date(r.t), 'Asia/Dubai', 'yyyy-MM-dd HH:mm:ss'), 'Booked']);
-}
-
-function sheetMark_(n, status) {
-  var sh = getSheet_();
-  var hit = sh.getRange('A:A').createTextFinder(raffleNo_(n)).matchEntireCell(true).findNext();
-  if (hit) sh.getRange(hit.getRow(), 8).setValue(status);
+// Rewrites the sheet from the bookings in one go, only when something changed.
+// Runs when the team opens the Bookings tab in admin and with the 5-minute timer,
+// never while a guest is waiting for their ticket. Run it from the editor any time.
+function syncBookingsSheet() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('SHEET_DIRTY') !== '1') return;
+  var cache = CacheService.getScriptCache();
+  if (cache.get('sheet-sync')) return; // another sync is running
+  cache.put('sheet-sync', '1', 120);
+  try {
+    props.setProperty('SHEET_DIRTY', '0'); // a booking made during the write marks it again
+    var winners = winners_();
+    var rows = allRegs_().sort(function (a, b) { return a.n - b.n; }).map(function (r) {
+      return [raffleNo_(r.n), 'Slot ' + r.s, r.name, r.co, r.em, "'" + r.ph,
+        Utilities.formatDate(new Date(r.t), 'Asia/Dubai', 'yyyy-MM-dd HH:mm:ss'),
+        winners.indexOf(r.n) >= 0 ? 'Raffle winner' : 'Booked'];
+    });
+    var sh = getSheet_();
+    var old = sh.getLastRow() - 1;
+    if (old > 0) sh.getRange(2, 1, old, 8).clearContent();
+    if (rows.length) sh.getRange(2, 1, rows.length, 8).setValues(rows);
+  } catch (e) {
+    props.setProperty('SHEET_DIRTY', '1');
+    console.error('Sheet sync failed: ' + e);
+  } finally {
+    cache.remove('sheet-sync');
+  }
 }
 
 // ---------------------------------------------------------------- album entries

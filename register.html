@@ -11,6 +11,8 @@
 <meta property="og:description" content="Immersive Audio Experience · Wharfedale Pro Week · Dubai">
 <meta property="og:image" content="https://soundcheck.techniline.org/assets/og-image.png?v=3">
 <link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -119,14 +121,14 @@
 
   <!-- Booking form -->
   <section class="card" id="form-card">
-    <div class="loading" id="loading"><span class="spin"></span>Checking available slots…</div>
+    <div class="loading" id="loading" hidden><span class="spin"></span>Checking available slots…</div>
 
     <div class="state" id="closed" hidden>
       <h2 id="closed-title">All slots are booked</h2>
       <p id="closed-text">Every Immersive Audio Experience slot is now full. Please speak to the Techniline team at the venue.</p>
     </div>
 
-    <form id="form" novalidate hidden>
+    <form id="form" novalidate>
       <div class="field">
         <label for="name">Full name <b>*</b></label>
         <input id="name" name="name" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Sara Khan" required>
@@ -150,7 +152,7 @@
       <div class="field">
         <label for="slot">Choose your slot <b>*</b></label>
         <select id="slot" name="slot" required>
-          <option value="" disabled selected>Select an available slot</option>
+          <option value="" disabled selected>Loading available slots…</option>
         </select>
         <p class="msg" id="slot-msg"></p>
         <div class="slot-left" id="slot-left" aria-live="polite"></div>
@@ -233,6 +235,7 @@ function applySlots(list, open) {
   }
   $("closed").hidden = true; form.hidden = false;
 
+  sel.options[0].textContent = "Select an available slot";
   var keep = sel.value;
   while (sel.options.length > 1) sel.remove(1);
   avail.forEach(function (s) {
@@ -355,7 +358,7 @@ $("another").addEventListener("click", function () {
   ["name", "company", "email", "phone", "slot"].forEach(function (id) { setMsg(id, ""); });
   $("done").hidden = true;
   $("form-card").hidden = false;
-  $("loading").hidden = false; form.hidden = true;
+  form.hidden = false;
   refresh();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
@@ -440,8 +443,10 @@ $("save").addEventListener("click", function () {
 // ---------------------------------------------------------------- start
 function refresh() {
   return fetchSlots().catch(function () {
+    // keep the form usable and quietly try again
     if (!slots.length) {
-      $("loading").innerHTML = "We couldn't load the slots. <button class='link' style='display:inline;margin:0' onclick='location.reload()'>Try again</button>";
+      setMsg("slot", "Still loading the slots. Check your connection, we'll keep trying.");
+      setTimeout(function () { refresh().then(function () { if (slots.length) setMsg("slot", ""); }); }, 4000);
     }
   });
 }
