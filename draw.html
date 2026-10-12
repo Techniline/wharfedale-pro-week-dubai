@@ -57,7 +57,7 @@
 
   .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
   .winners { display: flex; gap: 8px; flex-wrap: wrap; max-width: 70%; }
-  .winners span { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.3); color: var(--gold); }
+  .winners span { font-size: 15px; padding: 8px 14px !important; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.3); color: var(--gold); }
   .controls { display: flex; gap: 8px; align-items: center; }
   .btn { min-height: 52px; padding: 0 30px; border-radius: 999px; border: 1px solid transparent; font: 800 16px 'Manrope', sans-serif; cursor: pointer; }
   .btn-primary { background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: #031210; box-shadow: 0 12px 30px -12px rgba(23,230,196,0.7); }
@@ -87,7 +87,7 @@
     <div class="host">Hosted by <img class="tl" src="assets/techniline.png" alt="Techniline"></div>
   </div>
   <div class="center">
-    <div class="eyebrow">Soundcheck · On-stage raffle</div>
+    <div class="eyebrow" id="eyebrow">Soundcheck · On-stage raffle</div>
     <h1 class="title">And the winner <em>is</em></h1>
     <div class="num" id="num">SC-···</div>
     <div class="who" id="who"><p class="hint">Press <b>Space</b> or <b>Draw</b> to pick a winner</p></div>
@@ -96,6 +96,7 @@
     <div class="winners" id="winners"></div>
     <div class="controls">
       <span class="pool" id="pool"></span>
+      <button class="btn btn-ghost" id="redraw" type="button" hidden>Not here? Redraw</button>
       <button class="btn btn-ghost" id="reset" type="button">Reset draw</button>
       <button class="btn btn-primary" id="draw" type="button">Draw</button>
     </div>
@@ -105,7 +106,8 @@
 
 <script>
 var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
-var pin = "", regs = [], winners = [], rolling = false;
+var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, rolling = false;
+var ORD = ["1st", "2nd", "3rd"];
 var $ = function (id) { return document.getElementById(id); };
 function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3000); }
@@ -118,20 +120,31 @@ function load() {
     .then(function (res) {
       if (!res.ok) throw new Error(res.error || "Couldn't load bookings");
       regs = res.regs || [];
-      // keep a winner drawn moments ago even if its save hasn't reached the server yet
-      winners = (res.winners || []).concat(winners.filter(function (n) { return (res.winners || []).indexOf(n) < 0; }));
+      maxWinners = res.maxWinners || maxWinners;
+      // merge with this screen's own picks, in case a save hasn't reached the server yet
+      var sw = res.winners || [], ss = res.skipped || [];
+      skipped = ss.concat(skipped.filter(function (n) { return ss.indexOf(n) < 0; }));
+      winners = sw.concat(winners.filter(function (n) { return sw.indexOf(n) < 0; }))
+        .filter(function (n) { return skipped.indexOf(n) < 0; }).slice(0, maxWinners);
       renderSide();
     });
 }
-function pool() { return regs.filter(function (r) { return winners.indexOf(r.n) < 0; }); }
+function pool() { return regs.filter(function (r) { return winners.indexOf(r.n) < 0 && skipped.indexOf(r.n) < 0; }); }
+function byNo(n) { for (var i = 0; i < regs.length; i++) if (regs[i].n === n) return regs[i]; return null; }
 function renderSide() {
   var box = $("winners"); box.innerHTML = "";
-  winners.forEach(function (n) {
-    var s = document.createElement("span"); s.textContent = raffleNo(n); box.appendChild(s);
+  winners.forEach(function (n, i) {
+    var r = byNo(n), s = document.createElement("span");
+    s.textContent = (ORD[i] || (i + 1) + "th") + "  " + raffleNo(n) + (r ? "  " + String.fromCharCode(183) + "  " + r.name : "");
+    box.appendChild(s);
   });
-  var left = pool().length;
-  $("pool").textContent = left + (left === 1 ? " number in the draw" : " numbers in the draw");
-  $("draw").disabled = !left;
+  var left = pool().length, done = winners.length >= maxWinners;
+  $("pool").textContent = done ? "" : left + (left === 1 ? " number in the draw" : " numbers in the draw");
+  $("draw").disabled = done || !left;
+  $("draw").textContent = done ? "Both winners drawn" : "Draw winner " + (winners.length + 1);
+  if (!rolling) $("eyebrow").textContent = done
+    ? "Soundcheck " + String.fromCharCode(183) + " Congratulations to our winners"
+    : "Soundcheck " + String.fromCharCode(183) + " Winner " + (winners.length + 1) + " of " + maxWinners;
 }
 
 // Fair pick using the browser's cryptographic random numbers
@@ -142,9 +155,12 @@ function pick(list) {
 
 function draw() {
   if (rolling) return;
+  if (winners.length >= maxWinners) { toast("Both winners have been drawn."); return; }
   var list = pool();
-  if (!list.length) { toast("Everyone has already won. Reset the draw to start again."); return; }
+  if (!list.length) { toast("No numbers left in the draw."); return; }
   rolling = true;
+  $("redraw").hidden = true;
+  $("eyebrow").textContent = "Soundcheck " + String.fromCharCode(183) + " Winner " + (winners.length + 1) + " of " + maxWinners;
   document.body.classList.remove("won");
   $("draw").disabled = true;
   var winner = pick(list), num = $("num"), who = $("who");
@@ -164,8 +180,10 @@ function draw() {
     who.querySelector("span").textContent = winner.co;
     who.className = "who show";
     winners.push(winner.n);
-    renderSide();
+    current = winner;
+    $("redraw").hidden = false;
     rolling = false;
+    renderSide();
     fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, n: winner.n }) })
       .then(function (r) { return r.json(); })
       .then(function (res) { if (!res.ok) throw new Error(res.error); })
@@ -179,18 +197,34 @@ document.addEventListener("keydown", function (e) {
   if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); draw(); }
 });
 $("reset").addEventListener("click", function () {
-  if (!confirm("Reset the draw? All " + winners.length + " past winners go back into the draw.")) return;
+  if (!confirm("Reset the draw? The winners so far go back into the draw and you start again from winner 1.")) return;
   fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, reset: true }) })
     .then(function (r) { return r.json(); })
     .then(function (res) {
       if (!res.ok) throw new Error(res.error);
-      winners = []; renderSide();
+      winners = []; skipped = []; current = null; $("redraw").hidden = true; renderSide();
       document.body.classList.remove("won");
       $("num").textContent = "SC-" + String.fromCharCode(183, 183, 183);
       $("who").innerHTML = "<p class='hint'>Press <b>Space</b> or <b>Draw</b> to pick a winner</p>";
       toast("Draw reset");
     })
     .catch(function (e) { toast("Didn't reset: " + (e.message || "try again")); });
+});
+
+// Winner isn't in the room: they're taken off the winners and out of the draw, then we draw again
+$("redraw").addEventListener("click", function () {
+  if (!current || rolling) return;
+  var gone = current;
+  if (!confirm("Redraw? " + raffleNo(gone.n) + " (" + gone.name + ") is removed from the winners and can't be drawn again.")) return;
+  winners = winners.filter(function (n) { return n !== gone.n; });
+  if (skipped.indexOf(gone.n) < 0) skipped.push(gone.n);
+  current = null;
+  renderSide();
+  draw();
+  fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, n: gone.n, skip: true }) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) { if (!res.ok) throw new Error(res.error); })
+    .catch(function () { toast("Redraw shown, but not saved online. Check the connection."); });
 });
 
 function unlock(p) {

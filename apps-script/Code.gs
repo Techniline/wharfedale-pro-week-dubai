@@ -43,6 +43,7 @@ var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs 
 var SLOT_COUNT = 4;     // Immersive Audio Experience slots
 var SLOT_CAP = 30;      // guests per slot
 var RAFFLE_PREFIX = 'SC-';
+var RAFFLE_WINNERS = 2; // winners in the on-stage draw
 var REG = 'R_';         // Script Property prefix: one entry per booking, by raffle number
 var REG_EMAIL = 'RE_';  // email -> raffle number (stops repeat bookings)
 var REG_PHONE = 'RP_';  // phone -> raffle number
@@ -69,7 +70,7 @@ function doGet(e) {
     if (p.action === 'slots') return json_(publicSlots_());
     if (p.action === 'regs') {
       checkPin_(p.pin);
-      return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_() });
+      return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_(), skipped: skipped_(), maxWinners: RAFFLE_WINNERS });
     }
     if (p.action === 'admin') {
       checkPin_(p.pin);
@@ -366,23 +367,35 @@ function regDelete_(body) {
   }
 }
 
-// Raffle draw screen: remember winners so nobody is drawn twice
+// Raffle draw screen: remember winners so nobody is drawn twice. A winner who
+// isn't in the room can be skipped: they leave the winners and stay out of the draw.
 function winner_(body) {
   checkPin_(body.pin);
   var props = PropertiesService.getScriptProperties();
-  var list = winners_();
-  if (body.reset) list = [];
-  else {
-    var n = Number(body.n);
+  var list = winners_(), skipped = skipped_();
+  var n = Number(body.n);
+  if (body.reset) { list = []; skipped = []; }
+  else if (body.skip) {
+    list = list.filter(function (x) { return x !== n; });
+    if (skipped.indexOf(n) < 0) skipped.push(n);
+  } else {
     if (!getReg_(n)) throw new Error('Booking not found');
-    if (list.indexOf(n) < 0) list.push(n);
+    if (list.indexOf(n) < 0) {
+      if (list.length >= RAFFLE_WINNERS) throw new Error('Both winners have already been drawn.');
+      list.push(n);
+    }
   }
   props.setProperty('REG_WINNERS', JSON.stringify(list));
-  return { ok: true, winners: list };
+  props.setProperty('REG_SKIPPED', JSON.stringify(skipped));
+  return { ok: true, winners: list, skipped: skipped };
 }
 
 function winners_() {
   return JSON.parse(PropertiesService.getScriptProperties().getProperty('REG_WINNERS') || '[]');
+}
+
+function skipped_() {
+  return JSON.parse(PropertiesService.getScriptProperties().getProperty('REG_SKIPPED') || '[]');
 }
 
 function getReg_(n) {
