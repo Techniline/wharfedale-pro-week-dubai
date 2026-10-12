@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#060908">
-<title>Soundcheck · Approve photos</title>
+<title>Soundcheck · Team admin</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,6 +91,38 @@
   .view .acts button { min-height: 50px; font-size: 15px; }
   .view .close { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair-strong); background: rgba(15,22,20,0.85); color: var(--ink); font-size: 20px; cursor: pointer; }
 
+  /* View switch: Photos / Bookings */
+  .views { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid var(--hair-strong); background: rgba(255,255,255,0.02); }
+  .views button { border: 0; background: transparent; color: var(--dim); font-weight: 800; font-size: 13px; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+  .views button.on { background: var(--teal); color: #031210; }
+
+  /* Bookings */
+  .slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (min-width: 760px) { .slots { grid-template-columns: repeat(4, 1fr); } }
+  .slot { border: 1px solid var(--hair-strong); background: var(--card); border-radius: 14px; padding: 12px 14px; }
+  .slot small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .slot b { display: block; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 28px; margin: 4px 0 8px; }
+  .slot b span { font-family: 'Manrope', sans-serif; font-size: 13px; color: var(--faint); font-weight: 700; }
+  .bar { height: 6px; border-radius: 6px; background: #1d2725; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--teal); border-radius: 6px; transition: width .4s var(--ease); }
+  .slot.full { border-color: var(--tint-strong); }
+  .slot.full small { color: var(--teal); }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .tools input { flex: 1 1 220px; min-height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.35); color: var(--ink); font: 600 14px 'Manrope', sans-serif; }
+  .tools input:focus { outline: none; border-color: var(--teal); }
+  .chip { display: inline-flex; align-items: center; min-height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--tint-strong); background: transparent; color: var(--teal); font-weight: 800; font-size: 13px; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .regs { display: grid; gap: 8px; }
+  .reg { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 12px 12px 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--card); }
+  .reg .no { font-family: 'Fraunces', Georgia, serif; font-size: 20px; color: var(--teal); grid-row: span 2; }
+  .reg .who b { display: block; font-size: 15px; overflow-wrap: anywhere; }
+  .reg .who span { display: block; font-size: 13px; color: var(--dim); overflow-wrap: anywhere; }
+  .reg .contact { grid-column: 2; font-size: 12px; color: var(--faint); overflow-wrap: anywhere; }
+  .reg .contact a { color: inherit; }
+  .reg .side { grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .reg .slot-tag { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; background: var(--tint); color: var(--teal); white-space: nowrap; }
+  .reg .won { font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: #3a2f0c; color: #ffd666; white-space: nowrap; }
+  .reg .x { width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,138,149,0.35); background: transparent; color: var(--red); cursor: pointer; display: grid; place-items: center; }
+
   .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 40; padding: 12px 18px; border-radius: 12px; background: rgba(15,22,20,0.95); border: 1px solid var(--tint-strong); font-size: 14px; white-space: nowrap; }
 </style>
 </head>
@@ -100,7 +132,7 @@
   <form id="pin-form" autocomplete="off">
     <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
     <h1>Soundcheck<i>Wharfedale Pro Week · Dubai</i></h1>
-    <p>Enter the team PIN to review guest photos.</p>
+    <p>Enter the team PIN to manage photos and bookings.</p>
     <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" aria-label="PIN" required>
     <button class="btn btn-primary" type="submit">Unlock</button>
     <p class="err" id="pin-err" role="alert"></p>
@@ -110,9 +142,20 @@
 <div id="app" hidden>
   <header class="top">
     <div class="top-row">
-      <h2>Approve photos</h2>
-      <a class="live" href="live.html" target="_blank" rel="noopener">Open big screen ↗</a>
+      <nav class="views" aria-label="Section">
+        <button class="on" type="button" data-view="photos">Photos</button>
+        <button type="button" data-view="regs">Bookings</button>
+      </nav>
+      <a class="live" id="top-link" href="live.html" target="_blank" rel="noopener">Open big screen ↗</a>
     </div>
+    <div class="auto-row" id="reg-bar" hidden>
+      <label class="switch">
+        <input type="checkbox" id="reg-open" role="switch">
+        <span class="track" aria-hidden="true"><span class="knob"></span></span>
+        <span class="switch-text"><b>Slot booking</b><small id="reg-hint">Loading…</small></span>
+      </label>
+    </div>
+    <div id="photo-bar">
     <div class="auto-row">
       <label class="switch">
         <input type="checkbox" id="auto" role="switch">
@@ -125,10 +168,23 @@
       <button data-tab="a" type="button">Approved <b id="c-a">0</b></button>
       <button data-tab="h" type="button">Hidden <b id="c-h">0</b></button>
     </nav>
+    </div>
   </header>
   <main>
-    <div class="grid" id="grid"></div>
-    <div class="empty" id="empty" hidden></div>
+    <div id="photo-main">
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+    <div id="reg-main" hidden>
+      <div class="slots" id="slots"></div>
+      <div class="tools">
+        <input id="q" type="search" placeholder="Search name, company, email, phone or number" aria-label="Search bookings">
+        <button class="chip" type="button" id="csv">Export CSV</button>
+        <a class="chip" href="qr.html" target="_blank" rel="noopener">QR poster ↗</a>
+      </div>
+      <div class="regs" id="regs"></div>
+      <div class="empty" id="regs-empty" hidden>No bookings yet. They appear here as guests book.</div>
+    </div>
   </main>
 </div>
 
@@ -319,13 +375,147 @@ document.querySelectorAll(".tabs button").forEach(function (b) {
   };
 });
 
+// --- Bookings ---------------------------------------------------------------
+var view = "photos", regs = [], regSlots = [], winners = [];
+var DOT = String.fromCharCode(183);
+function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
+
+function loadRegs() {
+  return fetch(UPLOAD_URL + "?action=regs&pin=" + encodeURIComponent(pin) + "&t=" + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error === "Wrong PIN" ? res.error : "Update the Google Script to see bookings");
+      regs = res.regs; regSlots = res.slots; winners = res.winners || [];
+      setRegOpenUI(res.open);
+      renderRegs();
+    });
+}
+
+function renderRegs() {
+  var sw = document.getElementById("slots");
+  sw.innerHTML = "";
+  regSlots.forEach(function (s) {
+    var cap = s.taken + s.left, d = document.createElement("div");
+    d.className = "slot" + (s.left <= 0 ? " full" : "");
+    d.innerHTML = "<small></small><b></b><div class='bar'><i></i></div>";
+    d.querySelector("small").textContent = "Slot " + s.n + " " + DOT + (s.left <= 0 ? " Full" : " " + s.left + " left");
+    d.querySelector("b").innerHTML = s.taken + " <span>/ " + cap + "</span>";
+    d.querySelector("i").style.width = Math.round(100 * s.taken / Math.max(1, cap)) + "%";
+    sw.appendChild(d);
+  });
+
+  var q = document.getElementById("q").value.trim().toLowerCase();
+  var list = regs.filter(function (r) {
+    if (!q) return true;
+    return [raffleNo(r.n), r.name, r.co, r.em, r.ph, "slot " + r.s].join(" ").toLowerCase().indexOf(q) >= 0;
+  });
+  var box = document.getElementById("regs");
+  box.innerHTML = "";
+  list.forEach(function (r) {
+    var row = document.createElement("div");
+    row.className = "reg";
+    row.innerHTML = "<div class='no'></div><div class='who'><b></b><span></span></div><div class='side'><span class='slot-tag'></span></div><div class='contact'><a class='em'></a> " + DOT + " <a class='ph'></a></div>";
+    row.querySelector(".no").textContent = raffleNo(r.n);
+    row.querySelector(".who b").textContent = r.name;
+    row.querySelector(".who span").textContent = r.co;
+    row.querySelector(".slot-tag").textContent = "Slot " + r.s;
+    var em = row.querySelector(".em"); em.textContent = r.em; em.href = "mailto:" + r.em;
+    var ph = row.querySelector(".ph"); ph.textContent = r.ph; ph.href = "tel:" + r.ph;
+    var side = row.querySelector(".side");
+    if (winners.indexOf(r.n) >= 0) {
+      var w = document.createElement("span"); w.className = "won"; w.textContent = "Raffle winner"; side.appendChild(w);
+    }
+    var x = btn("x", "", function () { cancelReg(r); });
+    x.setAttribute("aria-label", "Cancel booking " + raffleNo(r.n)); x.title = "Cancel booking";
+    x.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    side.appendChild(x);
+    box.appendChild(row);
+  });
+  var empty = document.getElementById("regs-empty");
+  empty.hidden = list.length > 0;
+  empty.textContent = regs.length ? "No bookings match your search." : "No bookings yet. They appear here as guests book.";
+}
+document.getElementById("q").addEventListener("input", renderRegs);
+
+function cancelReg(r) {
+  if (!confirm("Cancel booking " + raffleNo(r.n) + " for " + r.name + "? Their seat in Slot " + r.s + " opens up again. The number " + raffleNo(r.n) + " won't be given to anyone else.")) return;
+  regs.splice(regs.indexOf(r), 1);
+  regSlots.forEach(function (s) { if (s.n === r.s) { s.taken--; s.left++; } });
+  renderRegs();
+  toast("Booking cancelled");
+  post({ action: "regDelete", pin: pin, n: r.n })
+    .catch(function (e) { loadRegs().catch(function () {}); toast("Didn't cancel: " + (e.message || "try again")); });
+}
+
+function post(body) {
+  return fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) { if (!res.ok) throw new Error(res.error); return res; });
+}
+
+var regOpenBox = document.getElementById("reg-open");
+function setRegOpenUI(on) {
+  regOpenBox.checked = on;
+  regOpenBox.closest(".switch").classList.toggle("on", on);
+  document.getElementById("reg-hint").textContent = on ? "OPEN: guests can book from the QR code" : "CLOSED: the booking page says booking is closed";
+}
+regOpenBox.addEventListener("change", function () {
+  var on = regOpenBox.checked;
+  if (!on && !confirm("Close slot booking? Guests will no longer be able to book.")) { regOpenBox.checked = true; return; }
+  var sw = regOpenBox.closest(".switch");
+  sw.classList.add("busy");
+  post({ action: "regSettings", pin: pin, open: on })
+    .then(function (res) { setRegOpenUI(res.open); toast(res.open ? "Slot booking is OPEN" : "Slot booking is CLOSED"); })
+    .catch(function (e) { setRegOpenUI(!on); toast("Didn't save: " + (e.message || "try again")); })
+    .then(function () { sw.classList.remove("busy"); });
+});
+
+// Spreadsheet-safe CSV (values starting with = + - @ are prefixed so Excel won't run them)
+function csvCell(v) {
+  v = String(v == null ? "" : v);
+  if (/^[=+\-@]/.test(v)) v = "'" + v;
+  return '"' + v.replace(/"/g, '""') + '"';
+}
+document.getElementById("csv").addEventListener("click", function () {
+  var rows = [["Raffle no", "Slot", "Name", "Company", "Email", "Phone", "Booked at (Dubai)", "Raffle winner"]];
+  regs.forEach(function (r) {
+    rows.push([raffleNo(r.n), "Slot " + r.s, r.name, r.co, r.em, r.ph,
+      new Date(r.t).toLocaleString("en-GB", { timeZone: "Asia/Dubai" }), winners.indexOf(r.n) >= 0 ? "Yes" : ""]);
+  });
+  var csv = rows.map(function (row) { return row.map(csvCell).join(","); }).join("\r\n");
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([String.fromCharCode(0xfeff) + csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "soundcheck-bookings.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+function showView(v) {
+  view = v;
+  document.querySelectorAll(".views button").forEach(function (b) { b.classList.toggle("on", b.dataset.view === v); });
+  document.getElementById("photo-bar").hidden = v !== "photos";
+  document.getElementById("photo-main").hidden = v !== "photos";
+  document.getElementById("reg-bar").hidden = v !== "regs";
+  document.getElementById("reg-main").hidden = v !== "regs";
+  var link = document.getElementById("top-link");
+  link.href = v === "regs" ? "draw.html" : "live.html";
+  link.textContent = v === "regs" ? "Raffle draw ↗" : "Open big screen ↗";
+  store("sc-view", v);
+  if (v === "regs") loadRegs().catch(function (e) { toast(e.message || "Couldn't load bookings"); });
+}
+document.querySelectorAll(".views button").forEach(function (b) { b.onclick = function () { showView(b.dataset.view); }; });
+
 function unlock(p) {
   pin = p;
   return load().then(function () {
     store("sc-pin", pin);
     document.getElementById("lock").hidden = true;
     document.getElementById("app").hidden = false;
-    setInterval(function () { if (!document.hidden && !viewing) load().catch(function () {}); }, 15000);
+    if (recall("sc-view") === "regs") showView("regs");
+    setInterval(function () {
+      if (document.hidden) return;
+      if (view === "regs") loadRegs().catch(function () {});
+      else if (!viewing) load().catch(function () {});
+    }, 15000);
   });
 }
 

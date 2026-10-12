@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#060908">
+<title>Soundcheck · Raffle draw</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #060908; --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77; --hair: rgba(230,245,240,0.10); --hair-strong: rgba(230,245,240,0.18);
+    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693; --tint: rgba(23,230,196,0.10); --tint-strong: rgba(23,230,196,0.25);
+    --red: #ff8a95; --gold: #ffd666; --ease: cubic-bezier(.2,.7,.2,1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  [hidden] { display: none !important; }
+  .glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 50% 42%, rgba(23,230,196,0.16), transparent 70%); transition: opacity .6s; }
+  body.won .glow { background: radial-gradient(55% 45% at 50% 42%, rgba(23,230,196,0.32), transparent 70%); }
+
+  /* PIN */
+  .lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 5; background: var(--bg); }
+  .lock form { width: 100%; max-width: 340px; text-align: center; }
+  .lock img { height: 72px; margin-bottom: 22px; }
+  .lock h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: 34px; margin: 0; }
+  .lock p { color: var(--dim); font-size: 14px; margin: 18px 0 14px; }
+  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.35); color: var(--ink); }
+  .lock input:focus { outline: none; border-color: var(--teal); }
+  .lock .err { color: var(--red); font-size: 13px; min-height: 20px; margin: 10px 0 0; }
+
+  .stage { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 3vh 4vw; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .top img.wp { height: clamp(44px, 7vh, 80px); }
+  .top img.tl { height: clamp(14px, 2.2vh, 24px); opacity: 0.85; }
+  .top .host { font-size: clamp(10px, 1.3vh, 13px); letter-spacing: 0.22em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
+
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; }
+  .eyebrow { font-size: clamp(12px, 1.8vh, 18px); font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal); }
+  .title { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: clamp(30px, 6vh, 64px); margin: 1vh 0 0; }
+  .title em { font-style: italic; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .num { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: clamp(90px, 26vh, 300px); line-height: 1; margin: 4vh 0 2vh; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .num.rolling { color: var(--dim); }
+  body.won .num { color: var(--ink); text-shadow: 0 0 60px rgba(23,230,196,0.45); animation: land .6s var(--ease); }
+  @keyframes land { 0% { transform: scale(0.92); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+  .who { min-height: 13vh; }
+  .who b { display: block; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: clamp(30px, 6vh, 66px); line-height: 1.1; }
+  .who span { display: block; margin-top: 1.2vh; font-size: clamp(14px, 2.4vh, 26px); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); }
+  .who.show { animation: up .6s var(--ease); }
+  @keyframes up { from { opacity: 0; transform: translateY(12px); } }
+  .hint { color: var(--faint); font-size: clamp(12px, 1.7vh, 16px); }
+
+  .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+  .winners { display: flex; gap: 8px; flex-wrap: wrap; max-width: 70%; }
+  .winners span { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.3); color: var(--gold); }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn { min-height: 52px; padding: 0 30px; border-radius: 999px; border: 1px solid transparent; font: 800 16px 'Manrope', sans-serif; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: #031210; box-shadow: 0 12px 30px -12px rgba(23,230,196,0.7); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .btn-ghost { background: transparent; color: var(--dim); border-color: var(--hair-strong); padding: 0 18px; font-size: 13px; min-height: 42px; }
+  .pool { font-size: 13px; color: var(--faint); margin-right: 8px; white-space: nowrap; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(15,22,20,0.95); border: 1px solid var(--tint-strong); font-size: 14px; z-index: 9; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<section class="lock" id="lock">
+  <form id="pin-form" autocomplete="off">
+    <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+    <h1>Raffle draw</h1>
+    <p>Enter the team PIN to start the draw.</p>
+    <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" aria-label="PIN" required>
+    <button class="btn btn-primary" type="submit" style="width:100%;margin-top:12px">Unlock</button>
+    <p class="err" id="pin-err" role="alert"></p>
+  </form>
+</section>
+
+<main class="stage" id="stage" hidden>
+  <div class="top">
+    <img class="wp" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+    <div class="host">Hosted by <img class="tl" src="assets/techniline.png" alt="Techniline"></div>
+  </div>
+  <div class="center">
+    <div class="eyebrow">Soundcheck · On-stage raffle</div>
+    <h1 class="title">And the winner <em>is</em></h1>
+    <div class="num" id="num">SC-···</div>
+    <div class="who" id="who"><p class="hint">Press <b>Space</b> or <b>Draw</b> to pick a winner</p></div>
+  </div>
+  <div class="bottom">
+    <div class="winners" id="winners"></div>
+    <div class="controls">
+      <span class="pool" id="pool"></span>
+      <button class="btn btn-ghost" id="reset" type="button">Reset draw</button>
+      <button class="btn btn-primary" id="draw" type="button">Draw</button>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
+var pin = "", regs = [], winners = [], rolling = false;
+var $ = function (id) { return document.getElementById(id); };
+function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
+function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3000); }
+function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+
+function load() {
+  return fetch(API + "?action=regs&pin=" + encodeURIComponent(pin) + "&t=" + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error || "Couldn't load bookings");
+      regs = res.regs || [];
+      // keep a winner drawn moments ago even if its save hasn't reached the server yet
+      winners = (res.winners || []).concat(winners.filter(function (n) { return (res.winners || []).indexOf(n) < 0; }));
+      renderSide();
+    });
+}
+function pool() { return regs.filter(function (r) { return winners.indexOf(r.n) < 0; }); }
+function renderSide() {
+  var box = $("winners"); box.innerHTML = "";
+  winners.forEach(function (n) {
+    var s = document.createElement("span"); s.textContent = raffleNo(n); box.appendChild(s);
+  });
+  var left = pool().length;
+  $("pool").textContent = left + (left === 1 ? " number in the draw" : " numbers in the draw");
+  $("draw").disabled = !left;
+}
+
+// Fair pick using the browser's cryptographic random numbers
+function pick(list) {
+  var a = new Uint32Array(1); crypto.getRandomValues(a);
+  return list[a[0] % list.length];
+}
+
+function draw() {
+  if (rolling) return;
+  var list = pool();
+  if (!list.length) { toast("Everyone has already won. Reset the draw to start again."); return; }
+  rolling = true;
+  document.body.classList.remove("won");
+  $("draw").disabled = true;
+  var winner = pick(list), num = $("num"), who = $("who");
+  who.innerHTML = ""; who.className = "who";
+  num.classList.add("rolling");
+  var start = performance.now(), total = list.length > 1 ? 4200 : 600, last = 0;
+  (function tick(now) {
+    var p = Math.min(1, (now - start) / total);
+    var gap = 40 + 360 * p * p * p; // slows down towards the end
+    if (now - last >= gap) { num.textContent = raffleNo(pick(list).n); last = now; }
+    if (p < 1) { requestAnimationFrame(tick); return; }
+    num.textContent = raffleNo(winner.n);
+    num.classList.remove("rolling");
+    document.body.classList.add("won");
+    who.innerHTML = "<b></b><span></span>";
+    who.querySelector("b").textContent = winner.name;
+    who.querySelector("span").textContent = winner.co;
+    who.className = "who show";
+    winners.push(winner.n);
+    renderSide();
+    rolling = false;
+    fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, n: winner.n }) })
+      .then(function (r) { return r.json(); })
+      .then(function (res) { if (!res.ok) throw new Error(res.error); })
+      .catch(function () { toast("Winner shown, but not saved online. Check the connection."); });
+  })(start);
+}
+
+$("draw").addEventListener("click", draw);
+document.addEventListener("keydown", function (e) {
+  if ($("stage").hidden) return;
+  if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); draw(); }
+});
+$("reset").addEventListener("click", function () {
+  if (!confirm("Reset the draw? All " + winners.length + " past winners go back into the draw.")) return;
+  fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, reset: true }) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error);
+      winners = []; renderSide();
+      document.body.classList.remove("won");
+      $("num").textContent = "SC-" + String.fromCharCode(183, 183, 183);
+      $("who").innerHTML = "<p class='hint'>Press <b>Space</b> or <b>Draw</b> to pick a winner</p>";
+      toast("Draw reset");
+    })
+    .catch(function (e) { toast("Didn't reset: " + (e.message || "try again")); });
+});
+
+function unlock(p) {
+  pin = p;
+  return load().then(function () {
+    store("sc-pin", pin);
+    $("lock").hidden = true; $("stage").hidden = false;
+    // pick up late bookings between draws
+    setInterval(function () { if (!rolling) load().catch(function () {}); }, 30000);
+  });
+}
+$("pin-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  $("pin-err").textContent = "Checking…";
+  unlock($("pin").value.trim())
+    .then(function () { $("pin-err").textContent = ""; })
+    .catch(function (e2) { $("pin-err").textContent = e2.message || "Wrong PIN"; store("sc-pin"); });
+});
+var saved = recall("sc-pin");
+if (saved) unlock(saved).catch(function () { store("sc-pin"); });
+</script>
+</body>
+</html>

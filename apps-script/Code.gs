@@ -17,6 +17,12 @@
  * guest uploads, new Cloudinary photos are copied into the Drive "Framed"
  * folder. Deleting a photo on the approval page removes its Drive copy too.
  *
+ * Slot booking (register.html): guests book one of the Immersive Audio
+ * Experience slots and get a raffle number (SC-001, SC-002, ...) in order.
+ * Bookings run one at a time under a lock, so a slot can never go past its
+ * capacity, and the same email or phone number can never get a second number.
+ * Every booking is also written to the "Soundcheck Registrations" Google Sheet.
+ *
  * Setup / update:
  *   1. Paste this file into script.google.com and save.
  *   2. Project Settings > Script Properties: ADMIN_PIN = <your PIN>, and for
@@ -34,6 +40,15 @@ var ITEM = 'P_';        // Script Property prefix for album entries
 var CLOUD = 'xccqslt2'; // Cloudinary cloud name (public)
 var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs from the soundcheck preset
 
+var SLOT_COUNT = 4;     // Immersive Audio Experience slots
+var SLOT_CAP = 30;      // guests per slot
+var RAFFLE_PREFIX = 'SC-';
+var REG = 'R_';         // Script Property prefix: one entry per booking, by raffle number
+var REG_EMAIL = 'RE_';  // email -> raffle number (stops repeat bookings)
+var REG_PHONE = 'RP_';  // phone -> raffle number
+var SLOTS_CACHE_KEY = 'slots';
+var SHEET_NAME = 'Soundcheck Registrations';
+
 function setup() {
   var root = getFolder_();
   getSubFolder_('Framed');
@@ -41,6 +56,7 @@ function setup() {
   var moved = migrateIndexFile_();
   Logger.log('Photos will be saved to: ' + root.getUrl());
   Logger.log('Album entries: ' + allItems_().length + (moved ? ' (moved ' + moved + ' from album-index.json)' : ''));
+  Logger.log('Registrations sheet: ' + getSheet_().getParent().getUrl() + ' (' + allRegs_().length + ' booked)');
   Logger.log(getPin_() ? 'ADMIN_PIN is set.' : 'ADMIN_PIN is NOT set yet: add it under Project Settings > Script Properties.');
 }
 
@@ -50,6 +66,11 @@ function doGet(e) {
   var p = (e && e.parameter) || {};
   try {
     if (p.action === 'list') return json_(publicList_());
+    if (p.action === 'slots') return json_(publicSlots_());
+    if (p.action === 'regs') {
+      checkPin_(p.pin);
+      return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_() });
+    }
     if (p.action === 'admin') {
       checkPin_(p.pin);
       var items = allItems_().sort(function (a, b) { return b.t - a.t; });
@@ -71,6 +92,10 @@ function doPost(e) {
     if (body.action === 'review') return json_(review_(body));
     if (body.action === 'settings') return json_(settings_(body));
     if (body.action === 'delete') return json_(delete_(body));
+    if (body.action === 'book') return json_(book_(body));
+    if (body.action === 'regSettings') return json_(regSettings_(body));
+    if (body.action === 'regDelete') return json_(regDelete_(body));
+    if (body.action === 'winner') return json_(winner_(body));
     return json_(legacyUpload_(body));
   } catch (err) {
     return json_({ ok: false, error: String(err.message || err) });
@@ -183,8 +208,10 @@ function stopDriveBackup() {
 
 // Called by the timer. Copies Cloudinary photos that have no Drive copy yet.
 function backupToDrive() {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(1000)) return; // a previous run is still going
+  // A cache flag rather than the script lock, so a long backup never holds up slot bookings
+  var cache = CacheService.getScriptCache();
+  if (cache.get('backup-running')) return; // a previous run is still going
+  cache.put('backup-running', '1', 300);
   try {
     var started = Date.now(), copied = 0;
     var folder = getSubFolder_('Framed');
@@ -207,7 +234,7 @@ function backupToDrive() {
     }
     if (copied) Logger.log('Backed up ' + copied + ' photo(s) to Drive.');
   } finally {
-    lock.releaseLock();
+    cache.remove('backup-running');
   }
 }
 
@@ -230,6 +257,190 @@ function legacyUpload_(body) {
   var name = 'Guest photo ' + Utilities.formatDate(new Date(), 'Asia/Dubai', 'yyyy-MM-dd HH.mm.ss') + ' ' + Utilities.getUuid().slice(0, 4) + '.jpg';
   getFolder_().createFile(Utilities.newBlob(bytes, 'image/jpeg', name));
   return { ok: true };
+}
+
+// ---------------------------------------------------------------- slot booking
+
+// Public: how many seats are left in each slot (no guest details)
+function publicSlots_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get(SLOTS_CACHE_KEY);
+  if (hit) return JSON.parse(hit);
+  var out = { ok: true, open: isRegOpen_(), cap: SLOT_CAP, slots: slotState_() };
+  cache.put(SLOTS_CACHE_KEY, JSON.stringify(out), 10);
+  return out;
+}
+
+function slotState_() {
+  var taken = [];
+  for (var i = 0; i < SLOT_COUNT; i++) taken.push(0);
+  allRegs_().forEach(function (r) { if (r.s >= 1 && r.s <= SLOT_COUNT) taken[r.s - 1]++; });
+  return taken.map(function (c, i) { return { n: i + 1, taken: c, left: Math.max(0, SLOT_CAP - c) }; });
+}
+
+function book_(body) {
+  if (body.website) throw new Error('Something went wrong. Please try again.'); // hidden field only bots fill in
+  var name = clean_(body.name, 80), company = clean_(body.company, 100);
+  var email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+  var phone = normPhone_(body.phone);
+  var slot = Number(body.slot);
+  if (name.length < 2) throw new Error('Enter your full name.');
+  if (company.length < 2) throw new Error('Enter your company name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error('Enter a valid email address.');
+  if (!phone) throw new Error('Enter a valid phone number.');
+  if (!(slot >= 1 && slot <= SLOT_COUNT && slot % 1 === 0)) throw new Error('Choose a slot.');
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(25000)) throw new Error('Lots of people are booking right now. Please tap Book again.');
+  try {
+    var props = PropertiesService.getScriptProperties();
+    // The same person can only ever hold one raffle number
+    var byEmail = props.getProperty(REG_EMAIL + email), byPhone = props.getProperty(REG_PHONE + phone);
+    if (byEmail || byPhone) {
+      var mine = byEmail && byPhone && byEmail === byPhone ? getReg_(byEmail) : null;
+      if (mine) return { ok: true, existing: true, ticket: ticket_(mine) };
+      throw new Error(byEmail
+        ? 'This email is already registered. Each guest gets one raffle number.'
+        : 'This phone number is already registered. Each guest gets one raffle number.');
+    }
+    if (!isRegOpen_()) throw new Error('Registration is closed.');
+    var state = slotState_();
+    if (state[slot - 1].left <= 0) {
+      return { ok: false, full: true, error: 'Slot ' + slot + ' just filled up. Please pick another slot.', slots: state };
+    }
+    var n = Number(props.getProperty('REG_NEXT') || 1);
+    var reg = { n: n, s: slot, name: name, co: company, em: email, ph: phone, t: Date.now() };
+    var batch = {};
+    batch[REG + n] = JSON.stringify(reg);
+    batch[REG_EMAIL + email] = String(n);
+    batch[REG_PHONE + phone] = String(n);
+    batch.REG_NEXT = String(n + 1);
+    props.setProperties(batch);
+    CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
+    try { sheetAppend_(reg); } catch (e) { console.error('Sheet write failed: ' + e); } // the booking itself is already saved
+    return { ok: true, ticket: ticket_(reg) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function ticket_(r) {
+  return { no: raffleNo_(r.n), slot: r.s, name: r.name, company: r.co };
+}
+
+function raffleNo_(n) {
+  return RAFFLE_PREFIX + ('00' + n).slice(-3);
+}
+
+// Admin: open or close registration
+function regSettings_(body) {
+  checkPin_(body.pin);
+  PropertiesService.getScriptProperties().setProperty('REG_OPEN', body.open ? '1' : '0');
+  CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
+  return { ok: true, open: !!body.open };
+}
+
+function isRegOpen_() {
+  return PropertiesService.getScriptProperties().getProperty('REG_OPEN') !== '0';
+}
+
+// Admin: cancel a booking. The seat is freed; the raffle number is never reused.
+function regDelete_(body) {
+  checkPin_(body.pin);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var r = getReg_(body.n);
+    if (!r) throw new Error('Booking not found');
+    props.deleteProperty(REG + r.n);
+    props.deleteProperty(REG_EMAIL + r.em);
+    props.deleteProperty(REG_PHONE + r.ph);
+    var w = winners_().filter(function (x) { return x !== r.n; });
+    props.setProperty('REG_WINNERS', JSON.stringify(w));
+    CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
+    try { sheetMark_(r.n, 'Cancelled'); } catch (e) { console.error('Sheet update failed: ' + e); }
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Raffle draw screen: remember winners so nobody is drawn twice
+function winner_(body) {
+  checkPin_(body.pin);
+  var props = PropertiesService.getScriptProperties();
+  var list = winners_();
+  if (body.reset) list = [];
+  else {
+    var n = Number(body.n);
+    if (!getReg_(n)) throw new Error('Booking not found');
+    if (list.indexOf(n) < 0) list.push(n);
+  }
+  props.setProperty('REG_WINNERS', JSON.stringify(list));
+  return { ok: true, winners: list };
+}
+
+function winners_() {
+  return JSON.parse(PropertiesService.getScriptProperties().getProperty('REG_WINNERS') || '[]');
+}
+
+function getReg_(n) {
+  var raw = PropertiesService.getScriptProperties().getProperty(REG + Number(n));
+  return raw ? JSON.parse(raw) : null;
+}
+
+function allRegs_() {
+  var props = PropertiesService.getScriptProperties().getProperties();
+  var out = [];
+  Object.keys(props).forEach(function (k) {
+    if (/^R_\d+$/.test(k)) out.push(JSON.parse(props[k]));
+  });
+  return out;
+}
+
+function clean_(v, max) {
+  return String(v || '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+// Digits only with the country code, so "050 123 4567" and "+971 50 123 4567"
+// count as the same number. Numbers starting with a single 0 are taken as UAE.
+function normPhone_(v) {
+  var d = String(v || '').replace(/[^\d+]/g, '');
+  if (d.indexOf('+') === 0) d = d.slice(1);
+  else if (d.indexOf('00') === 0) d = d.slice(2);
+  else if (d.indexOf('0') === 0) d = '971' + d.slice(1);
+  d = d.replace(/\D/g, '');
+  return d.length >= 9 && d.length <= 15 ? '+' + d : '';
+}
+
+// The Google Sheet copy, in the same Drive folder as the photos
+function getSheet_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('REG_SHEET_ID');
+  if (id) {
+    try { return SpreadsheetApp.openById(id).getSheets()[0]; } catch (e) { /* deleted; make a new one */ }
+  }
+  var ss = SpreadsheetApp.create(SHEET_NAME);
+  DriveApp.getFileById(ss.getId()).moveTo(getFolder_());
+  var sh = ss.getSheets()[0];
+  sh.setName('Bookings');
+  sh.appendRow(['Raffle no', 'Slot', 'Name', 'Company', 'Email', 'Phone', 'Booked at (Dubai)', 'Status']);
+  sh.getRange(1, 1, 1, 8).setFontWeight('bold');
+  sh.setFrozenRows(1);
+  props.setProperty('REG_SHEET_ID', ss.getId());
+  return sh;
+}
+
+function sheetAppend_(r) {
+  getSheet_().appendRow([raffleNo_(r.n), 'Slot ' + r.s, r.name, r.co, r.em, "'" + r.ph,
+    Utilities.formatDate(new Date(r.t), 'Asia/Dubai', 'yyyy-MM-dd HH:mm:ss'), 'Booked']);
+}
+
+function sheetMark_(n, status) {
+  var sh = getSheet_();
+  var hit = sh.getRange('A:A').createTextFinder(raffleNo_(n)).matchEntireCell(true).findNext();
+  if (hit) sh.getRange(hit.getRow(), 8).setValue(status);
 }
 
 // ---------------------------------------------------------------- album entries

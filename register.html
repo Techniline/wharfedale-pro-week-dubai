@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060908">
+<title>Book your slot · Soundcheck</title>
+<meta name="description" content="Book your slot for the Immersive Audio Experience at Soundcheck, Wharfedale Pro Week Dubai.">
+<meta property="og:title" content="Book your slot · Soundcheck">
+<meta property="og:description" content="Immersive Audio Experience · Wharfedale Pro Week · Dubai">
+<meta property="og:image" content="https://soundcheck.techniline.org/assets/og-image.png?v=3">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #060908; --card: rgba(18,26,24,0.72); --field: rgba(0,0,0,0.35);
+    --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77;
+    --hair: rgba(230,245,240,0.08); --hair-strong: rgba(230,245,240,0.16);
+    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693; --tint: rgba(23,230,196,0.08); --tint-strong: rgba(23,230,196,0.22);
+    --on-teal: #031210; --red: #ff8a95; --ease: cubic-bezier(.2,.7,.2,1);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; min-height: 100svh; color: var(--ink); font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased; background: var(--bg);
+    background-image: radial-gradient(70% 45% at 50% 0%, rgba(23,230,196,0.14), transparent 70%), radial-gradient(50% 40% at 100% 100%, rgba(0,166,147,0.10), transparent 70%);
+    background-attachment: fixed;
+  }
+  [hidden] { display: none !important; }
+  .page { max-width: 480px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom)); }
+
+  .head { text-align: center; margin-bottom: 26px; }
+  .head .logo { height: 78px; width: auto; margin-bottom: 20px; }
+  .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.24em; color: var(--teal); text-transform: uppercase; }
+  h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: clamp(36px, 10vw, 46px); line-height: 1.05; margin: 10px 0 10px; letter-spacing: -0.01em; }
+  h1 em { font-style: italic; font-weight: 400; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--dim); font-size: 14px; margin: 0; }
+
+  .card { background: var(--card); border: 1px solid var(--hair-strong); border-radius: 22px; padding: 22px 18px; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 30px 80px -40px rgba(0,0,0,0.8); }
+  @media (min-width: 420px) { .card { padding: 26px 24px; } }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); margin-bottom: 7px; }
+  .field label b { color: var(--teal); font-weight: 800; }
+  .field input, .field select {
+    width: 100%; min-height: 52px; padding: 13px 15px; border-radius: 14px; border: 1px solid var(--hair-strong); background: var(--field);
+    color: var(--ink); font: 600 16px 'Manrope', sans-serif; transition: border-color .2s, box-shadow .2s; -webkit-appearance: none; appearance: none;
+  }
+  .field input::placeholder { color: var(--faint); font-weight: 500; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--tint-strong); }
+  .field select { padding-right: 44px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2317e6c4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
+  .field select option { background: #0f1614; color: var(--ink); }
+  .field select:invalid { color: var(--faint); }
+  .field.bad input, .field.bad select { border-color: var(--red); }
+  .field.bad input:focus, .field.bad select:focus { box-shadow: 0 0 0 3px rgba(255,138,149,0.2); }
+  .msg { font-size: 13px; color: var(--red); margin: 7px 2px 0; min-height: 0; }
+  .msg:empty { display: none; }
+  .hint { font-size: 12px; color: var(--faint); margin: 7px 2px 0; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  .slot-left { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .slot-left span { font-size: 12px; font-weight: 700; color: var(--dim); border: 1px solid var(--hair-strong); border-radius: 999px; padding: 5px 10px; }
+  .slot-left span.full { color: var(--faint); text-decoration: line-through; border-style: dashed; }
+  .slot-left span.low { color: var(--teal); border-color: var(--tint-strong); }
+
+  .btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; padding: 14px 24px; border-radius: 999px; border: 1px solid transparent; font: 800 16px 'Manrope', sans-serif; letter-spacing: 0.01em; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: filter .2s, transform .2s var(--ease), opacity .2s; }
+  .btn:active { transform: scale(0.985); }
+  .btn-primary { background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: var(--on-teal); box-shadow: 0 12px 30px -12px rgba(23,230,196,0.7), inset 0 1px 0 rgba(255,255,255,0.35); }
+  .btn-ghost { background: transparent; color: var(--teal); border-color: var(--tint-strong); }
+  .btn[aria-busy="true"] { pointer-events: none; opacity: 0.85; }
+  .spin { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(3,18,16,0.25); border-top-color: var(--on-teal); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .form-err { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(255,138,149,0.08); border: 1px solid rgba(255,138,149,0.3); color: var(--red); font-size: 14px; }
+  .consent { font-size: 12px; color: var(--faint); text-align: center; margin: 14px 4px 0; line-height: 1.5; }
+
+  .state { text-align: center; padding: 18px 6px; }
+  .state h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 26px; margin: 0 0 8px; }
+  .state p { color: var(--dim); margin: 0; font-size: 15px; line-height: 1.5; }
+  .loading { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--dim); font-size: 14px; padding: 40px 0; }
+  .loading .spin { border-color: rgba(23,230,196,0.2); border-top-color: var(--teal); }
+
+  /* Ticket */
+  .done-head { text-align: center; margin-bottom: 18px; }
+  .done-head h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: 32px; margin: 8px 0 0; line-height: 1.1; }
+  .ticket { position: relative; background: #f4f8f6; color: #071311; border-radius: 22px; padding: 26px 22px 22px; text-align: center; box-shadow: 0 30px 70px -30px rgba(23,230,196,0.45); animation: pop .55s var(--ease); }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
+  .ticket::before, .ticket::after { content: ""; position: absolute; top: 62%; width: 26px; height: 26px; border-radius: 50%; background: var(--bg); transform: translateY(-50%); }
+  .ticket::before { left: -13px; } .ticket::after { right: -13px; }
+  .t-label { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; color: #00806f; text-transform: uppercase; }
+  .t-no { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: clamp(56px, 17vw, 72px); line-height: 1; margin: 10px 0 6px; letter-spacing: -0.01em; }
+  .t-slot { display: inline-block; margin-top: 6px; padding: 7px 16px; border-radius: 999px; background: #071311; color: var(--teal); font-weight: 800; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .t-cut { border-top: 2px dashed #c3d0cc; margin: 22px -6px 18px; }
+  .t-name { font-family: 'Fraunces', Georgia, serif; font-size: 24px; font-weight: 500; overflow-wrap: anywhere; }
+  .t-co { font-size: 13px; font-weight: 700; color: #4a5754; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; overflow-wrap: anywhere; }
+  .t-event { font-size: 12px; color: #6b7a77; margin-top: 14px; }
+  .note { color: var(--dim); font-size: 14px; text-align: center; line-height: 1.55; margin: 18px 8px; }
+  .note b { color: var(--ink); }
+  .actions { display: grid; gap: 10px; }
+  .link { display: block; margin: 16px auto 0; background: none; border: 0; color: var(--dim); font: 600 13px 'Manrope', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 8px; }
+
+  .foot { text-align: center; margin-top: 30px; color: var(--faint); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; }
+  .foot img { height: 16px; width: auto; vertical-align: middle; margin-left: 6px; opacity: 0.85; }
+  .foot a { color: inherit; text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <a href="./"><img class="logo" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro" width="667" height="540"></a>
+    <div class="eyebrow">Immersive Audio Experience</div>
+    <h1>Book your <em>slot</em></h1>
+    <p class="sub">Soundcheck · Wharfedale Pro Week · Dubai</p>
+  </header>
+
+  <!-- Booking form -->
+  <section class="card" id="form-card">
+    <div class="loading" id="loading"><span class="spin"></span>Checking available slots…</div>
+
+    <div class="state" id="closed" hidden>
+      <h2 id="closed-title">All slots are booked</h2>
+      <p id="closed-text">Every Immersive Audio Experience slot is now full. Please speak to the Techniline team at the venue.</p>
+    </div>
+
+    <form id="form" novalidate hidden>
+      <div class="field">
+        <label for="name">Full name <b>*</b></label>
+        <input id="name" name="name" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Sara Khan" required>
+        <p class="msg" id="name-msg"></p>
+      </div>
+      <div class="field">
+        <label for="company">Company <b>*</b></label>
+        <input id="company" name="company" autocomplete="organization" autocapitalize="words" maxlength="100" placeholder="Blue Note Studios" required>
+        <p class="msg" id="company-msg"></p>
+      </div>
+      <div class="field">
+        <label for="email">Email <b>*</b></label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="sara@company.com" required>
+        <p class="msg" id="email-msg"></p>
+      </div>
+      <div class="field">
+        <label for="phone">Phone number <b>*</b></label>
+        <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" placeholder="+971 50 123 4567" required>
+        <p class="msg" id="phone-msg"></p>
+      </div>
+      <div class="field">
+        <label for="slot">Choose your slot <b>*</b></label>
+        <select id="slot" name="slot" required>
+          <option value="" disabled selected>Select an available slot</option>
+        </select>
+        <p class="msg" id="slot-msg"></p>
+        <div class="slot-left" id="slot-left" aria-live="polite"></div>
+      </div>
+      <div class="hp" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
+
+      <button class="btn btn-primary" id="submit" type="submit">Book my slot</button>
+      <p class="form-err" id="form-err" role="alert" hidden></p>
+      <p class="consent">One raffle number per guest. We use your details only to manage your booking for this event.</p>
+    </form>
+  </section>
+
+  <!-- Confirmation -->
+  <section id="done" hidden>
+    <div class="done-head">
+      <div class="eyebrow" id="done-eyebrow">You're booked</div>
+      <h2 id="done-title">See you there</h2>
+    </div>
+    <div class="ticket" id="ticket">
+      <div class="t-label">Raffle number</div>
+      <div class="t-no" id="t-no">SC-000</div>
+      <div class="t-slot" id="t-slot">Slot 1</div>
+      <div class="t-cut"></div>
+      <div class="t-name" id="t-name"></div>
+      <div class="t-co" id="t-co"></div>
+      <div class="t-event">Immersive Audio Experience · Soundcheck · Wharfedale Pro Week Dubai</div>
+    </div>
+    <p class="note">Show this at the experience. Keep your <b>raffle number</b> for the on-stage draw.</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="save" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+        Save my ticket
+      </button>
+      <a class="btn btn-ghost" href="./">Back to Soundcheck</a>
+    </div>
+    <button class="link" id="another" type="button">Book for another guest</button>
+  </section>
+
+  <footer class="foot"><a href="./">Hosted by <img src="assets/techniline.png" alt="Techniline" width="472" height="84"></a></footer>
+</div>
+
+<script>
+var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
+var DOT = String.fromCharCode(183);
+var $ = function (id) { return document.getElementById(id); };
+var form = $("form"), sel = $("slot"), btn = $("submit");
+var slots = [], cap = 30, busy = false, ticket = null;
+
+function save(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function load(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
+
+function withTimeout(promise, ms) {
+  return new Promise(function (ok, fail) {
+    var t = setTimeout(function () { fail(new Error("timeout")); }, ms);
+    promise.then(function (v) { clearTimeout(t); ok(v); }, function (e) { clearTimeout(t); fail(e); });
+  });
+}
+
+// ---------------------------------------------------------------- slots
+function fetchSlots() {
+  return withTimeout(fetch(API + "?action=slots&t=" + Date.now()).then(function (r) { return r.json(); }), 20000)
+    .then(function (res) {
+      if (!res.ok || !Array.isArray(res.slots)) throw new Error(res.error || "bad");
+      cap = res.cap || cap;
+      applySlots(res.slots, res.open);
+    });
+}
+
+function applySlots(list, open) {
+  slots = list;
+  var avail = list.filter(function (s) { return s.left > 0; });
+  $("loading").hidden = true;
+  if (open === false || !avail.length) {
+    form.hidden = true; $("closed").hidden = false;
+    $("closed-title").textContent = open === false ? "Booking is closed" : "All slots are booked";
+    $("closed-text").textContent = open === false
+      ? "Slot booking isn't open right now. Please speak to the Techniline team at the venue."
+      : "Every Immersive Audio Experience slot is now full. Please speak to the Techniline team at the venue.";
+    return;
+  }
+  $("closed").hidden = true; form.hidden = false;
+
+  var keep = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  avail.forEach(function (s) {
+    var o = document.createElement("option");
+    o.value = s.n;
+    o.textContent = "Slot " + s.n + "  " + DOT + "  " + s.left + (s.left === 1 ? " seat left" : " seats left");
+    sel.appendChild(o);
+  });
+  if (keep && avail.some(function (s) { return String(s.n) === keep; })) sel.value = keep;
+  else {
+    sel.selectedIndex = 0;
+    if (keep) setMsg("slot", "Slot " + keep + " just filled up. Please pick another slot.");
+  }
+
+  var chips = $("slot-left");
+  chips.innerHTML = "";
+  list.forEach(function (s) {
+    var c = document.createElement("span");
+    c.className = s.left <= 0 ? "full" : s.left <= 5 ? "low" : "";
+    c.textContent = "Slot " + s.n + (s.left <= 0 ? " full" : " " + DOT + " " + s.left + " left");
+    chips.appendChild(c);
+  });
+}
+
+// ---------------------------------------------------------------- validation
+function normPhone(v) {
+  var d = String(v || "").replace(/[^\d+]/g, "");
+  if (d.indexOf("+") === 0) d = d.slice(1);
+  else if (d.indexOf("00") === 0) d = d.slice(2);
+  else if (d.indexOf("0") === 0) d = "971" + d.slice(1);
+  d = d.replace(/\D/g, "");
+  return d.length >= 9 && d.length <= 15 ? "+" + d : "";
+}
+var RULES = {
+  name: function (v) { return v.trim().length >= 2 ? "" : "Enter your full name."; },
+  company: function (v) { return v.trim().length >= 2 ? "" : "Enter your company name."; },
+  email: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? "" : "Enter a valid email, like name@company.com."; },
+  phone: function (v) { return normPhone(v) ? "" : "Enter a valid phone number, like +971 50 123 4567."; },
+  slot: function (v) { return v ? "" : "Choose a slot."; }
+};
+function setMsg(id, text) {
+  $(id + "-msg").textContent = text;
+  $(id).closest(".field").classList.toggle("bad", !!text);
+  $(id).setAttribute("aria-invalid", text ? "true" : "false");
+}
+function check(id) { var m = RULES[id]($(id).value); setMsg(id, m); return !m; }
+Object.keys(RULES).forEach(function (id) {
+  var el = $(id);
+  el.setAttribute("aria-describedby", id + "-msg");
+  el.addEventListener("blur", function () { if (el.value) check(id); });
+  el.addEventListener(id === "slot" ? "change" : "input", function () {
+    if (el.closest(".field").classList.contains("bad")) check(id);
+    $("form-err").hidden = true;
+  });
+});
+
+// ---------------------------------------------------------------- booking
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+  if (busy) return;
+  var first = null;
+  Object.keys(RULES).forEach(function (id) { if (!check(id) && !first) first = $(id); });
+  if (first) { first.focus(); return; }
+
+  setBusy(true);
+  var payload = {
+    action: "book", name: $("name").value.trim(), company: $("company").value.trim(),
+    email: $("email").value.trim(), phone: $("phone").value.trim(), slot: Number(sel.value), website: $("website").value
+  };
+  send(payload, 0);
+});
+
+// A retry after a dropped connection is safe: the same email and phone get the same ticket back
+function send(payload, attempt) {
+  withTimeout(fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
+    .then(function (r) { return r.json(); }), 35000)
+    .then(function (res) {
+      if (res.ok && res.ticket) { showTicket(res.ticket, res.existing); return; }
+      setBusy(false);
+      if (res.full && res.slots) { applySlots(res.slots, true); setMsg("slot", res.error); sel.focus(); return; }
+      var m = res.error || "Something went wrong. Please try again.";
+      if (/email/i.test(m) && /registered/i.test(m)) { setMsg("email", m); $("email").focus(); return; }
+      if (/phone/i.test(m) && /registered/i.test(m)) { setMsg("phone", m); $("phone").focus(); return; }
+      if (m === "Bad request") m = "Booking isn't switched on yet. Please try again in a few minutes.";
+      formError(m);
+    })
+    .catch(function () {
+      if (attempt < 1) { send(payload, attempt + 1); return; }
+      setBusy(false);
+      formError("We couldn't reach the booking system. Check your connection and tap Book my slot again.");
+    });
+}
+
+function setBusy(on) {
+  busy = on;
+  btn.setAttribute("aria-busy", on ? "true" : "false");
+  btn.innerHTML = on ? '<span class="spin"></span>Booking your slot…' : "Book my slot";
+  $("form-err").hidden = true;
+}
+function formError(m) { var el = $("form-err"); el.textContent = m; el.hidden = false; }
+
+// ---------------------------------------------------------------- ticket
+function showTicket(t, existing) {
+  ticket = t;
+  save("sc-ticket", t);
+  setBusy(false);
+  $("t-no").textContent = t.no;
+  $("t-slot").textContent = "Slot " + t.slot;
+  $("t-name").textContent = t.name;
+  $("t-co").textContent = t.company;
+  $("done-eyebrow").textContent = existing ? "You're already booked" : "You're booked";
+  $("done-title").textContent = "See you there, " + t.name.split(" ")[0];
+  $("form-card").hidden = true;
+  $("done").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+$("another").addEventListener("click", function () {
+  form.reset();
+  ["name", "company", "email", "phone", "slot"].forEach(function (id) { setMsg(id, ""); });
+  $("done").hidden = true;
+  $("form-card").hidden = false;
+  $("loading").hidden = false; form.hidden = true;
+  refresh();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// Ticket image for the phone's photos (1080 x 1350)
+function ticketImage() {
+  var W = 1080, H = 1350, c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  var g = c.getContext("2d");
+  g.fillStyle = "#060908"; g.fillRect(0, 0, W, H);
+  var glow = g.createRadialGradient(W / 2, 0, 0, W / 2, 0, 800);
+  glow.addColorStop(0, "rgba(23,230,196,0.28)"); glow.addColorStop(1, "rgba(23,230,196,0)");
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.textAlign = "center";
+  g.fillStyle = "#17e6c4"; g.font = "800 30px Manrope, sans-serif";
+  spaced(g, "IMMERSIVE AUDIO EXPERIENCE", W / 2, 150, 7);
+  g.fillStyle = "#f1f6f4"; g.font = "300 84px Fraunces, Georgia, serif";
+  g.fillText("Soundcheck", W / 2, 250);
+  g.fillStyle = "#a3b3af"; g.font = "600 30px Manrope, sans-serif";
+  g.fillText("Wharfedale Pro Week " + DOT + " Dubai", W / 2, 305);
+
+  var x = 90, y = 380, w = W - 180, h = 820, r = 44;
+  g.fillStyle = "#f4f8f6"; round(g, x, y, w, h, r); g.fill();
+  g.fillStyle = "#060908";
+  g.beginPath(); g.arc(x, y + 520, 34, 0, Math.PI * 2); g.arc(x + w, y + 520, 34, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#00806f"; g.font = "800 30px Manrope, sans-serif";
+  spaced(g, "RAFFLE NUMBER", W / 2, y + 110, 7);
+  g.fillStyle = "#071311"; g.font = "500 190px Fraunces, Georgia, serif";
+  g.fillText(ticket.no, W / 2, y + 300);
+  g.fillStyle = "#071311"; round(g, W / 2 - 130, y + 360, 260, 70, 35); g.fill();
+  g.fillStyle = "#17e6c4"; g.font = "800 32px Manrope, sans-serif";
+  spaced(g, "SLOT " + ticket.slot, W / 2, y + 407, 5);
+  g.strokeStyle = "#c3d0cc"; g.lineWidth = 4; g.setLineDash([16, 14]);
+  g.beginPath(); g.moveTo(x + 50, y + 520); g.lineTo(x + w - 50, y + 520); g.stroke(); g.setLineDash([]);
+  g.fillStyle = "#071311"; g.font = "500 " + fit(g, ticket.name, "Fraunces, Georgia, serif", 64, w - 120) + "px Fraunces, Georgia, serif";
+  g.fillText(ticket.name, W / 2, y + 640);
+  g.fillStyle = "#4a5754"; g.font = "700 " + fit(g, ticket.company.toUpperCase(), "Manrope, sans-serif", 32, w - 120, "700 ") + "px Manrope, sans-serif";
+  spaced(g, ticket.company.toUpperCase(), W / 2, y + 705, 3);
+  g.fillStyle = "#6b7a77"; g.font = "600 26px Manrope, sans-serif";
+  g.fillText("Keep this number for the on-stage raffle draw", W / 2, y + 770);
+  g.fillStyle = "#6b7a77"; g.font = "700 24px Manrope, sans-serif";
+  spaced(g, "HOSTED BY TECHNILINE", W / 2, H - 70, 6);
+  return c;
+}
+function round(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function fit(g, text, family, size, max, weight) {
+  weight = weight || "500 ";
+  while (size > 18) { g.font = weight + size + "px " + family; if (g.measureText(text).width <= max) break; size -= 2; }
+  return size;
+}
+function spaced(g, text, cx, y, sp) {
+  var widths = [], total = 0;
+  for (var i = 0; i < text.length; i++) { var w = g.measureText(text[i]).width; widths.push(w); total += w + (i ? sp : 0); }
+  var x = cx - total / 2, align = g.textAlign;
+  g.textAlign = "left";
+  for (var j = 0; j < text.length; j++) { g.fillText(text[j], x, y); x += widths[j] + sp; }
+  g.textAlign = align;
+}
+
+$("save").addEventListener("click", function () {
+  if (!ticket) return;
+  var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  ready.then(function () {
+    ticketImage().toBlob(function (blob) {
+      var name = "soundcheck-" + ticket.no.toLowerCase() + ".png";
+      var file = typeof File === "function" ? new File([blob], name, { type: "image/png" }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "My Soundcheck slot" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    }, "image/png");
+  });
+});
+
+// ---------------------------------------------------------------- start
+function refresh() {
+  return fetchSlots().catch(function () {
+    if (!slots.length) {
+      $("loading").innerHTML = "We couldn't load the slots. <button class='link' style='display:inline;margin:0' onclick='location.reload()'>Try again</button>";
+    }
+  });
+}
+
+var mine = load("sc-ticket");
+if (mine && mine.no) showTicket(mine, true);
+refresh();
+// Keep seat counts fresh while the form is open
+setInterval(function () { if (!document.hidden && !busy && !$("form-card").hidden) refresh(); }, 20000);
+document.addEventListener("visibilitychange", function () { if (!document.hidden && !busy && !$("form-card").hidden) refresh(); });
+</script>
+</body>
+</html>
