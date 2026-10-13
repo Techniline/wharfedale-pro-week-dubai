@@ -41,13 +41,17 @@
   .spot { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.13), rgba(0,0,0,0.0) 60%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.75)); transition: opacity .6s; }
   body.won .spot { background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.26), rgba(0,0,0,0.0) 62%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.78)); }
 
-  /* entries drifting in the background */
-  .pool-rows { position: absolute; inset: 0; z-index: -2; display: flex; flex-direction: column; justify-content: space-around; padding: 9vh 0; opacity: 0.11; pointer-events: none; transition: opacity .8s; overflow: hidden; }
-  body.spinning .pool-rows { opacity: 0.2; }
-  body.won .pool-rows { opacity: 0.05; }
-  .pool-row { white-space: nowrap; font: 800 clamp(16px, 2.6vh, 30px) 'Poppins', sans-serif; letter-spacing: 0.06em; color: var(--ink); will-change: transform; }
-  .pool-row span { margin-right: 2.2em; }
-  .pool-row span.out { opacity: 0.25; text-decoration: line-through; }
+  /* soft stage-light beams sweeping behind the machine (GPU-only: transform + opacity) */
+  .beams { position: absolute; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+  .beam { position: absolute; left: 50%; top: 46%; width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; border-radius: 50%; opacity: 0.35; transition: opacity 1.2s ease; will-change: transform;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(13,192,223,0.16) 8deg, transparent 18deg, transparent 90deg, rgba(1,146,152,0.14) 98deg, transparent 108deg, transparent 180deg, rgba(13,192,223,0.12) 188deg, transparent 198deg, transparent 270deg, rgba(134,227,244,0.10) 278deg, transparent 288deg);
+    -webkit-mask-image: radial-gradient(closest-side, #000 15%, transparent 72%); mask-image: radial-gradient(closest-side, #000 15%, transparent 72%);
+    animation: sweep 48s linear infinite; }
+  .beam.b2 { animation-duration: 64s; animation-direction: reverse; opacity: 0.25; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  body.spinning .beam { opacity: 0.7; }
+  body.spinning .beam.b2 { opacity: 0.5; }
+  body.won .beam { opacity: 0.9; }
 
   .top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
   .brand { display: flex; align-items: center; gap: 1.6vw; }
@@ -71,7 +75,7 @@
   .reel::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.75), transparent 26%, transparent 74%, rgba(0,0,0,0.75)); }
   .strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
   .strip div { height: var(--cell); display: grid; place-items: center; font: 900 calc(var(--cell) * 0.72)/1 'Poppins', sans-serif; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .reel.fast .strip { filter: blur(3px); }
+  .reel.fast .strip div { color: #cfcfcf; }
   .reel.locked { box-shadow: inset 0 0 0 2px var(--cyan), 0 0 34px -4px rgba(13,192,223,0.7); animation: thunk .35s var(--ease); }
   .reel.locked .strip div { color: var(--cyan); }
   @keyframes thunk { 0% { transform: translateY(0); } 35% { transform: translateY(6px) scale(0.98); } 100% { transform: none; } }
@@ -115,7 +119,7 @@
   canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(12,12,12,0.96); border: 1px solid rgba(13,192,223,0.35); font-size: 14px; z-index: 40; }
   @media (max-width: 760px) { .bottom { flex-direction: column; align-items: stretch; } .winners { max-width: none; } .controls { justify-content: center; } .host { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .pool-row { transform: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .beam { animation: none; } }
 </style>
 </head>
 <body>
@@ -133,7 +137,7 @@
 
 <main class="stage" id="stage" hidden>
   <div class="spot"></div>
-  <div class="pool-rows" id="pool-rows" aria-hidden="true"></div>
+  <div class="beams" aria-hidden="true"><div class="beam"></div><div class="beam b2"></div></div>
 
   <header class="top">
     <div class="brand">
@@ -284,33 +288,7 @@ function render() {
   $("draw").disabled = busy || done || !left;
   $("draw").textContent = done ? "All winners drawn" : "Draw winner " + (winners.length + 1);
   if (!busy) $("eyebrow").textContent = done ? "Congratulations to our winners" : "On-stage raffle " + DOT + " Winner " + (winners.length + 1) + " of " + maxWinners;
-  buildRows();
 }
-
-// Faint rows of every entry number drifting behind the machine
-var rowAnim = [], rowBoost = 1;
-function buildRows() {
-  var box = $("pool-rows");
-  if (!regs.length) { box.innerHTML = ""; rowAnim = []; return; }
-  var out = winners.concat(skipped);
-  box.innerHTML = [0, 1, 2, 3, 4].map(function (k) {
-    var cut = (k * 13) % regs.length, shifted = regs.slice(cut).concat(regs.slice(0, cut));
-    return "<div class='pool-row'>" + shifted.concat(shifted).map(function (r) {
-      return "<span" + (out.indexOf(r.n) >= 0 ? " class='out'" : "") + ">" + raffleNo(r.n) + "</span>";
-    }).join("") + "</div>";
-  }).join("");
-  rowAnim = Array.prototype.map.call(box.children, function (el, k) { return { el: el, x: -Math.random() * 400, dir: k % 2 ? 1 : -1, speed: 0.25 + k * 0.06 }; });
-}
-(function drift() {
-  rowAnim.forEach(function (r) {
-    var half = r.el.scrollWidth / 2;
-    r.x += r.dir * r.speed * rowBoost;
-    if (r.x < -half) r.x += half;
-    if (r.x > 0) r.x -= half;
-    r.el.style.transform = "translateX(" + r.x + "px)";
-  });
-  requestAnimationFrame(drift);
-})();
 
 // ================================================================ reels
 var reels = [];
@@ -330,7 +308,7 @@ function buildReels() {
 function cellH() { return reels.length ? reels[0].el.clientHeight : 200; }
 function paintReel(r) {
   var p = ((r.pos % 10) + 10) % 10;
-  r.strip.style.transform = "translateY(" + (-p * cellH()) + "px)";
+  r.strip.style.transform = "translate3d(0," + (-p * cellH()).toFixed(2) + "px,0)";
 }
 var lastT = 0;
 function loop(t) {
@@ -352,10 +330,10 @@ function loop(t) {
       } else moving = true;
     }
     else if (r.state === "crawl") {
-      // one number per click, each a little slower, with a small bounce as it settles
+      // one number per click, each a little slower, gliding smoothly into place
       var d = r.crawl[r.ci], kc = Math.min(1, (t - r.ct0) / d);
-      var c1 = 1.6, c3 = c1 + 1, back = 1 + c3 * Math.pow(kc - 1, 3) + c1 * Math.pow(kc - 1, 2); // ease-out back
-      r.pos = r.cfrom + back;
+      var glide = kc < 0.5 ? 4 * kc * kc * kc : 1 - Math.pow(-2 * kc + 2, 3) / 2; // ease-in-out cubic
+      r.pos = r.cfrom + glide;
       if (kc >= 1) {
         r.pos = r.cfrom + 1; r.ci++;
         click(r.ci / r.crawl.length);
@@ -402,7 +380,6 @@ function draw() {
   var stamp = new Date(), fpP = fingerprint(list);
 
   $("eyebrow").textContent = "Shuffling " + list.length + " entries";
-  rowBoost = 7;
   spinAll();
   setTimeout(function () { if (busy) $("eyebrow").textContent = "Mixing the numbers"; }, PACE.shuffle * 0.4);
   setTimeout(function () { if (busy) $("eyebrow").textContent = "Here we go"; }, PACE.shuffle * 0.78);
@@ -417,7 +394,6 @@ function draw() {
     }).then(function () { return wait(isLast ? 350 : PACE.gap); });
   });
   seq.then(function () {
-    rowBoost = 1;
     document.body.classList.remove("spinning"); document.body.classList.add("won");
     who.innerHTML = "<div class='name'></div><div class='co'></div><div class='tag'></div>";
     who.querySelector(".name").textContent = winner.name;
