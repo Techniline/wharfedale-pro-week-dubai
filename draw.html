@@ -186,8 +186,8 @@ var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, busy = false, soundOn = true, digits = 3;
 var ORD = ["1st", "2nd", "3rd", "4th", "5th"];
-// Draw pacing (ms): about 15 seconds from Draw to the winner's name
-var PACE = { shuffle: 4200, digit: 1900, gap: 900, last: 5200, lastTurns: 5 };
+// Draw pacing (ms): about 21 seconds from Draw to the winner's name
+var PACE = { shuffle: 6000, digit: 2600, gap: 1300, last: 7000, lastTurns: 7 };
 
 function raffleNo(n) { var s = String(n); while (s.length < digits) s = "0" + s; return "SC-" + s; }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3200); }
