@@ -190,14 +190,9 @@ var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, busy = false, soundOn = true, digits = 3;
 var ORD = ["1st", "2nd", "3rd", "4th", "5th"];
-// Draw pacing (ms): about 24 seconds from Draw to the winner's name.
-// Each reel slows down, then "crawls" its final numbers one click at a time,
-// each click slower than the one before (like a casino wheel on its pegs).
-var PACE = {
-  shuffle: 6000, gap: 1300,
-  digit: 2000, digitCrawl: [380, 620],
-  last: 4200, lastTurns: 6, lastCrawl: [300, 420, 580, 780, 1050, 1400]
-};
+// Draw pacing (ms): about 21 seconds from Draw to the winner's name.
+// Each reel glides to a stop in one smooth, continuous slow-down.
+var PACE = { shuffle: 6000, gap: 1300, digit: 3000, digitTurns: 4, last: 6500, lastTurns: 6 };
 
 function raffleNo(n) { var s = String(n); while (s.length < digits) s = "0" + s; return "SC-" + s; }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3200); }
@@ -317,29 +312,13 @@ function loop(t) {
   reels.forEach(function (r) {
     if (r.state === "spin") { r.pos += r.vel * dt; moving = true; }
     else if (r.state === "stop") {
-      // slow down from full speed to just before the last few numbers
+      // one smooth, continuous slow-down from spinning speed to a stop on the number
       var k = Math.min(1, (t - r.t0) / r.dur), e = 1 - Math.pow(1 - k, 3); // ease-out cubic
       var before = Math.floor(r.pos);
       r.pos = r.from + (r.to - r.from) * e;
       if (Math.floor(r.pos) !== before) tick(1 - k);
-      r.el.classList.toggle("fast", k < 0.6);
-      if (k >= 1) {
-        r.pos = r.to; r.el.classList.remove("fast");
-        if (r.crawl.length) { r.state = "crawl"; r.ci = 0; r.cfrom = r.pos; r.ct0 = t; moving = true; }
-        else lock(r);
-      } else moving = true;
-    }
-    else if (r.state === "crawl") {
-      // one number per click, each a little slower, gliding smoothly into place
-      var d = r.crawl[r.ci], kc = Math.min(1, (t - r.ct0) / d);
-      var glide = kc < 0.5 ? 4 * kc * kc * kc : 1 - Math.pow(-2 * kc + 2, 3) / 2; // ease-in-out cubic
-      r.pos = r.cfrom + glide;
-      if (kc >= 1) {
-        r.pos = r.cfrom + 1; r.ci++;
-        click(r.ci / r.crawl.length);
-        if (r.ci >= r.crawl.length) lock(r);
-        else { r.cfrom = r.pos; r.ct0 = t; moving = true; }
-      } else moving = true;
+      r.el.classList.toggle("fast", k < 0.5);
+      if (k >= 1) { r.pos = r.to; lock(r); } else moving = true;
     }
     paintReel(r);
   });
@@ -349,12 +328,13 @@ function spinAll() {
   reels.forEach(function (r, i) { r.state = "spin"; r.vel = 26 + i * 4; r.el.classList.remove("locked"); r.el.classList.add("fast"); });
   lastT = 0; requestAnimationFrame(loop);
 }
-function stopReel(r, digit, dur, turns, crawl) {
+function stopReel(r, digit, dur, turns) {
   return new Promise(function (done) {
     var base = Math.ceil(r.pos / 10) * 10 + 10 * (turns || 2); // full turns before landing
-    r.crawl = crawl || [];
-    // the slow-down ends just short of the target; the crawl clicks through the rest
-    r.from = r.pos; r.to = base + digit - r.crawl.length; r.t0 = performance.now(); r.dur = dur; r.state = "stop"; r.done = done;
+    r.from = r.pos; r.to = base + digit;
+    // start slowing at exactly the speed it was spinning (ease-out cubic starts at 3x the average speed)
+    var seamless = r.vel ? 3 * (r.to - r.from) / r.vel * 1000 : dur;
+    r.dur = Math.max(dur, seamless); r.t0 = performance.now(); r.state = "stop"; r.done = done;
   });
 }
 function lock(r) {
@@ -387,10 +367,10 @@ function draw() {
   reels.forEach(function (r, i) {
     var isLast = i === reels.length - 1;
     seq = seq.then(function () {
-      if (isLast) { $("eyebrow").textContent = "And the last digit is"; drumroll(PACE.last + PACE.lastCrawl.reduce(function (a, b) { return a + b; }, 0)); }
+      if (isLast) { $("eyebrow").textContent = "And the last digit is"; drumroll(PACE.last); }
       else if (i === 0) $("eyebrow").textContent = "First digit";
       else $("eyebrow").textContent = "Next digit";
-      return stopReel(r, Number(target[i]), isLast ? PACE.last : PACE.digit, isLast ? PACE.lastTurns : 3, isLast ? PACE.lastCrawl : PACE.digitCrawl);
+      return stopReel(r, Number(target[i]), isLast ? PACE.last : PACE.digit, isLast ? PACE.lastTurns : PACE.digitTurns);
     }).then(function () { return wait(isLast ? 350 : PACE.gap); });
   });
   seq.then(function () {
@@ -472,8 +452,6 @@ function drumroll(ms) {
     t += gap; gap = Math.max(0.045, gap * 0.95);
   }
 }
-// a wheel-peg click for each crawled number, louder as it nears the stop
-function click(v) { tone(1250, 0.05, "square", 0.05 + 0.09 * v); tone(420, 0.06, "triangle", 0.06 + 0.1 * v); }
 function thunk() { tone(110, 0.28, "sine", 0.45); tone(220, 0.12, "triangle", 0.12); }
 function chime() { [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { tone(f, 0.9, "triangle", 0.16, i * 0.11); }); tone(1567.98, 1.4, "sine", 0.06, 0.46); }
 function paintSound() {
