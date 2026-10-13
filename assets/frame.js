@@ -55,20 +55,25 @@
     ctx.stroke();
   }
 
-  // Cheap, cross-browser blur (canvas ctx.filter isn't available on older iOS):
-  // shrink the region a lot, then scale it back up with smoothing.
-  function softBlur(src, sx, sy, sw, sh, dw, dh) {
-    var s1 = document.createElement('canvas');
-    s1.width = Math.max(8, Math.round(dw / 28)); s1.height = Math.max(4, Math.round(dh / 28));
-    var c1 = s1.getContext('2d');
-    c1.imageSmoothingQuality = 'high';
-    c1.drawImage(src, sx, sy, sw, sh, 0, 0, s1.width, s1.height);
-    var s2 = document.createElement('canvas');
-    s2.width = Math.round(dw / 7); s2.height = Math.max(4, Math.round(dh / 7));
-    var c2 = s2.getContext('2d');
-    c2.imageSmoothingQuality = 'high';
-    c2.drawImage(s1, 0, 0, s2.width, s2.height);
-    return s2;
+  // Speaker-grille texture, the same tile as assets/grille.svg, drawn on a
+  // canvas so it needs no extra download. s scales the 34 x 22 tile.
+  function grillePattern(ctx, s) {
+    var t = document.createElement('canvas');
+    t.width = Math.round(34 * s); t.height = Math.round(22 * s);
+    var g = t.getContext('2d');
+    g.fillStyle = '#080808'; g.fillRect(0, 0, t.width, t.height);
+    g.scale(t.width / 34, t.height / 22);
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    function zig(dy, color, width) {
+      g.beginPath();
+      g.moveTo(-8.5, 3 + dy); g.lineTo(0, 15 + dy); g.lineTo(8.5, 3 + dy); g.lineTo(17, 15 + dy);
+      g.lineTo(25.5, 3 + dy); g.lineTo(34, 15 + dy); g.lineTo(42.5, 3 + dy);
+      g.strokeStyle = color; g.lineWidth = width; g.stroke();
+    }
+    zig(1.5, '#030303', 8);
+    zig(0, '#191919', 7);
+    zig(-2, '#242424', 2.2);
+    return ctx.createPattern(t, 'repeat');
   }
 
   // "14 OCT 2026" and "10:43 PM" in Dubai time, whatever the phone's own time zone
@@ -104,30 +109,29 @@
       // photo, full and uncropped
       ctx.drawImage(photo, 0, 0, W, ph);
 
-      // ---- glass bar: the bottom of the photo continues underneath, mirrored and blurred
-      var stripH = Math.min(ph, bar * 1.4);
-      var glass = softBlur(c, 0, ph - stripH, W, stripH, W, bar);
+      // ---- bar: the event's speaker grille (as on the website and key art)
       ctx.save();
-      ctx.translate(0, ph + bar);
-      ctx.scale(1, -1); // mirror so the colours flow straight on from the photo's edge
-      ctx.drawImage(glass, 0, 0, W, bar);
+      ctx.translate(0, ph);
+      ctx.fillStyle = grillePattern(ctx, W / 1080 * 1.15);
+      ctx.fillRect(0, 0, W, bar);
       ctx.restore();
+      // darker towards the bottom, with a faint cyan glow on the right behind the hosted-by block
       var tint = ctx.createLinearGradient(0, ph, 0, H);
-      tint.addColorStop(0, 'rgba(10,10,10,0.50)');
-      tint.addColorStop(1, 'rgba(9,9,9,0.86)');
+      tint.addColorStop(0, 'rgba(0,0,0,0.10)');
+      tint.addColorStop(1, 'rgba(0,0,0,0.55)');
       ctx.fillStyle = tint;
       ctx.fillRect(0, ph, W, bar);
-      var glow = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.7);
-      glow.addColorStop(0, 'rgba(13,192,223,0.20)');
+      var glow = ctx.createRadialGradient(W, ph, 0, W, ph, W * 0.55);
+      glow.addColorStop(0, 'rgba(13,192,223,0.14)');
       glow.addColorStop(1, 'rgba(13,192,223,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, ph, W, bar);
-      // soft fade above the bar so there's no hard edge
-      var fade = ctx.createLinearGradient(0, ph - bar * 0.55, 0, ph);
-      fade.addColorStop(0, 'rgba(10,10,10,0)');
-      fade.addColorStop(1, 'rgba(10,10,10,0.42)');
+      // soft fade above the bar so the photo eases into it
+      var fade = ctx.createLinearGradient(0, ph - bar * 0.6, 0, ph);
+      fade.addColorStop(0, 'rgba(0,0,0,0)');
+      fade.addColorStop(1, 'rgba(0,0,0,0.5)');
       ctx.fillStyle = fade;
-      ctx.fillRect(0, ph - bar * 0.55, W, bar * 0.55);
+      ctx.fillRect(0, ph - bar * 0.6, W, bar * 0.6);
 
       // teal corner brackets on the photo (top corners, like the page's viewfinder)
       var size = W * (portrait ? 0.07 : 0.05), inset = W * 0.03;
@@ -138,9 +142,11 @@
       corner(ctx, W - inset, inset, size, -1, 1, size * 0.25);
       ctx.restore();
 
-      // thin teal line along the top edge of the bar
-      ctx.fillStyle = 'rgba(13,192,223,0.55)';
-      ctx.fillRect(0, ph, W, Math.max(2, Math.round(W * 0.0022)));
+      // accent line along the top edge of the bar: cyan into Techniline teal
+      var line = ctx.createLinearGradient(0, 0, W, 0);
+      line.addColorStop(0, TEAL); line.addColorStop(1, '#019298');
+      ctx.fillStyle = line;
+      ctx.fillRect(0, ph, W, Math.max(3, Math.round(W * 0.0035)));
 
       var pad = W * 0.045, mid = ph + bar / 2;
 
@@ -179,34 +185,44 @@
       var metaW = spacedWidth(ctx, meta, mSize * 0.16);
       var hostW = Math.max(tlw, labelW, metaW);
 
-      // ---- Soundcheck / Wharfedale Pro Week - Dubai, shrunk if it would reach the right block
-      var tSize = W * (portrait ? 0.06 : 0.04), sSize = W * (portrait ? 0.0285 : 0.021);
-      var sub = 'Wharfedale Pro Week ' + dot + ' Dubai';
-      ctx.font = '700 ' + sSize + 'px Poppins, Manrope, sans-serif';
-      var subW = ctx.measureText(sub).width;
+      // ---- SOUNDCHECK, then "2026  WHARFEDALE PRO WEEK - DUBAI", shrunk if it would reach the right block
+      var tSize = W * (portrait ? 0.062 : 0.042), ySize = tSize * 0.44, eSize = tSize * 0.25;
+      var event = 'WHARFEDALE PRO WEEK ' + dot + ' DUBAI', eSp = eSize * 0.18;
       ctx.font = '900 ' + tSize + 'px Poppins, Manrope, sans-serif';
+      var titleW = ctx.measureText('SOUNDCHECK').width;
+      ctx.font = '800 ' + ySize + 'px Poppins, Manrope, sans-serif';
+      var yearW = ctx.measureText('2026').width;
+      ctx.font = '800 ' + eSize + 'px Manrope, Arial, sans-serif';
+      var line2W = yearW + tSize * 0.18 + spacedWidth(ctx, event, eSp);
       var room = (right - hostW - W * 0.03) - x;
-      var fit = Math.min(1, room / Math.max(subW, ctx.measureText('SOUNDCHECK').width));
-      tSize *= fit; sSize *= fit;
-      var blockH = tSize * 0.95 + W * 0.006 + sSize;
+      var fit = Math.min(1, room / Math.max(titleW, line2W));
+      tSize *= fit; ySize *= fit; eSize *= fit; eSp *= fit; yearW *= fit;
+      var blockH = tSize * 0.78 + tSize * 0.16 + ySize * 0.78;
       var top = mid - blockH / 2;
       ctx.textBaseline = 'alphabetic';
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = W * 0.006;
       ctx.fillStyle = TEAL;
       ctx.font = '900 ' + tSize + 'px Poppins, Manrope, sans-serif';
       ctx.fillText('SOUNDCHECK', x, top + tSize * 0.78);
-      ctx.font = '700 ' + sSize + 'px Poppins, Manrope, sans-serif';
+      var base2 = top + tSize * 0.78 + tSize * 0.16 + ySize * 0.78;
       ctx.fillStyle = '#d9d9d9';
-      ctx.fillText(sub, x, top + tSize * 0.95 + W * 0.006 + sSize * 0.8);
+      ctx.font = '800 ' + ySize + 'px Poppins, Manrope, sans-serif';
+      ctx.fillText('2026', x, base2);
+      ctx.fillStyle = '#9a9a9a';
+      ctx.font = '800 ' + eSize + 'px Manrope, Arial, sans-serif';
+      drawSpaced(ctx, event, x + yearW + tSize * 0.18, base2 - (ySize - eSize) * 0.12, eSp);
+      ctx.restore();
 
       // draw the right block, vertically centred in the bar
       var blockR = mSize + gap * 1.6 + hSize + gap + tlh;
       var y0 = mid - blockR / 2;
       ctx.font = '700 ' + mSize + 'px Manrope, Arial, sans-serif';
-      ctx.fillStyle = '#86e3f4';
+      ctx.fillStyle = TEAL;
       drawSpaced(ctx, meta, right - metaW, y0 + mSize * 0.8, mSize * 0.16);
       y0 += mSize + gap * 1.6;
       ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillStyle = '#9a9a9a';
       drawSpaced(ctx, label, right - labelW, y0 + hSize * 0.8, spacing);
       y0 += hSize + gap;
       ctx.drawImage(tl, right - tlw, y0, tlw, tlh);
