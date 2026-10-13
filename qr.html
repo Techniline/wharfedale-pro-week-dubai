@@ -8,31 +8,34 @@
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,400&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] { --bg: #060908; --ink: #f1f6f4; --dim: #a3b3af; --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693; }
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] { --bg: #0b0b0b; --ink: #f5f5f5; --dim: #b5b5b5; --teal: #0dc0df; --teal-soft: #86e3f4; --teal-2: #0a9fc0; }
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #2a302e; }
   body { font-family: 'Manrope', sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .bar { text-align: center; padding: 14px; }
-  .bar button { font: 800 14px 'Manrope', sans-serif; padding: 12px 22px; border-radius: 999px; border: 0; background: var(--teal); color: #031210; cursor: pointer; }
+  .bar button { font: 800 14px 'Manrope', sans-serif; padding: 12px 22px; border-radius: 999px; border: 0; background: var(--teal); color: #04161b; cursor: pointer; }
   .poster {
     width: 210mm; height: 297mm; margin: 0 auto 24px; position: relative; overflow: hidden; background: var(--bg);
-    background-image: radial-gradient(70% 40% at 50% 0%, rgba(23,230,196,0.22), transparent 70%), radial-gradient(60% 35% at 50% 100%, rgba(0,166,147,0.16), transparent 70%);
+    background-image: radial-gradient(70% 40% at 50% 0%, rgba(13,192,223,0.16), transparent 70%), url("assets/grille.svg");
+    background-size: auto, 34px 22px;
     display: flex; flex-direction: column; align-items: center; text-align: center; padding: 22mm 18mm 16mm;
   }
-  .logo { height: 34mm; }
-  .eyebrow { margin-top: 12mm; font-size: 13pt; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal); }
-  h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: 54pt; line-height: 1; margin: 5mm 0 0; }
-  h1 em { font-style: italic; font-weight: 400; color: var(--teal); }
-  .qr { margin-top: 12mm; width: 92mm; height: 92mm; padding: 5mm; background: #fff; border-radius: 8mm; box-shadow: 0 0 0 2mm rgba(23,230,196,0.35); }
+  .logo { height: 26mm; }
+  .eyebrow { margin-top: 6mm; font-size: 13pt; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal); }
+  .wordmark { margin-top: 10mm; font: 900 52pt/0.95 'Poppins', sans-serif; color: var(--teal); text-transform: uppercase; letter-spacing: -0.01em; }
+  .year { font: 800 30pt 'Poppins', sans-serif; color: #d9d9d9; margin-top: 1mm; }
+  h1 { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 800; font-size: 30pt; line-height: 1; margin: 7mm 0 0; }
+  h1 em { font-style: normal; color: var(--teal); }
+  .qr { margin-top: 12mm; width: 92mm; height: 92mm; padding: 5mm; background: #fff; border-radius: 8mm; box-shadow: 0 0 0 2mm rgba(13,192,223,0.35); }
   .qr img { width: 100%; height: 100%; display: block; }
   .scan { margin-top: 9mm; font-size: 16pt; font-weight: 700; }
   .facts { margin-top: 5mm; font-size: 12pt; color: var(--dim); line-height: 1.6; }
   .facts b { color: var(--ink); }
   .url { margin-top: 4mm; font-size: 11pt; color: var(--teal); letter-spacing: 0.04em; }
-  .foot { margin-top: auto; display: flex; align-items: center; gap: 4mm; font-size: 9pt; letter-spacing: 0.24em; text-transform: uppercase; color: #6b7a77; }
+  .foot { margin-top: auto; display: flex; align-items: center; gap: 4mm; font-size: 9pt; letter-spacing: 0.24em; text-transform: uppercase; color: #808080; }
   .foot img { height: 6mm; }
   @media print { html, body { background: none; } .bar { display: none; } .poster { margin: 0; } }
   @media screen and (max-width: 820px) { .poster { zoom: 0.45; } }
@@ -42,11 +45,12 @@
 <div class="bar"><button type="button" onclick="print()">Print or save as PDF</button></div>
 <div class="poster">
   <img class="logo" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
-  <div class="eyebrow">Immersive Audio Experience</div>
-  <h1>Book your <em>slot</em></h1>
+  <div class="wordmark">Soundcheck</div>
+  <div class="year">2026</div>
+  <h1>Register &amp; book your <em>slot</em></h1>
   <div class="qr"><img src="assets/register-qr.svg" alt="QR code to book your slot"></div>
   <div class="scan">Scan with your phone camera</div>
-  <div class="facts">4 slots &nbsp;·&nbsp; 35 guests each &nbsp;·&nbsp; <b>every guest gets a raffle number</b><br>for tonight's on-stage draw</div>
+  <div class="facts"><b>Every guest gets a raffle number</b> for the on-stage draw<br>Immersive Audio Experience slots available</div>
   <div class="url">soundcheck.techniline.org/register</div>
   <div class="foot">Hosted by <img src="assets/techniline.png" alt="Techniline"></div>
 </div>

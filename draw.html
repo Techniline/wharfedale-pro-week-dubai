@@ -5,30 +5,30 @@
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#060908">
+<meta name="theme-color" content="#0b0b0b">
 <title>Soundcheck · Raffle draw</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
-    --bg: #060908; --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77; --hair: rgba(230,245,240,0.10); --hair-strong: rgba(230,245,240,0.18);
-    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693; --tint: rgba(23,230,196,0.10); --tint-strong: rgba(23,230,196,0.25);
+    --bg: #0b0b0b; --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080; --hair: rgba(255,255,255,0.10); --hair-strong: rgba(255,255,255,0.18);
+    --teal: #0dc0df; --teal-soft: #86e3f4; --teal-2: #0a9fc0; --tint: rgba(13,192,223,0.10); --tint-strong: rgba(13,192,223,0.25);
     --red: #ff8a95; --gold: #ffd666; --ease: cubic-bezier(.2,.7,.2,1);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  body { margin: 0; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
   [hidden] { display: none !important; }
-  .glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 50% 42%, rgba(23,230,196,0.16), transparent 70%); transition: opacity .6s; }
-  body.won .glow { background: radial-gradient(55% 45% at 50% 42%, rgba(23,230,196,0.32), transparent 70%); }
+  .glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 50% 42%, rgba(13,192,223,0.16), transparent 70%); transition: opacity .6s; }
+  body.won .glow { background: radial-gradient(55% 45% at 50% 42%, rgba(13,192,223,0.32), transparent 70%); }
 
   /* PIN */
   .lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 5; background: var(--bg); }
   .lock form { width: 100%; max-width: 340px; text-align: center; }
   .lock img { height: 72px; margin-bottom: 22px; }
-  .lock h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: 34px; margin: 0; }
+  .lock h1 { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 900; text-transform: uppercase; color: var(--teal); font-size: 34px; margin: 0; }
   .lock p { color: var(--dim); font-size: 14px; margin: 18px 0 14px; }
   .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.35); color: var(--ink); }
   .lock input:focus { outline: none; border-color: var(--teal); }
@@ -42,14 +42,14 @@
 
   .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; }
   .eyebrow { font-size: clamp(12px, 1.8vh, 18px); font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal); }
-  .title { font-family: 'Fraunces', Georgia, serif; font-weight: 300; font-size: clamp(30px, 6vh, 64px); margin: 1vh 0 0; }
-  .title em { font-style: italic; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .num { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: clamp(90px, 26vh, 300px); line-height: 1; margin: 4vh 0 2vh; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .title { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 800; font-size: clamp(30px, 6vh, 64px); margin: 1vh 0 0; }
+  .title em { font-style: normal; color: var(--teal); }
+  .num { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 900; font-size: clamp(90px, 26vh, 300px); line-height: 1; margin: 4vh 0 2vh; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .num.rolling { color: var(--dim); }
-  body.won .num { color: var(--ink); text-shadow: 0 0 60px rgba(23,230,196,0.45); animation: land .6s var(--ease); }
+  body.won .num { color: var(--ink); text-shadow: 0 0 60px rgba(13,192,223,0.45); animation: land .6s var(--ease); }
   @keyframes land { 0% { transform: scale(0.92); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
   .who { min-height: 13vh; }
-  .who b { display: block; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: clamp(30px, 6vh, 66px); line-height: 1.1; }
+  .who b { display: block; font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 800; font-size: clamp(30px, 6vh, 66px); line-height: 1.1; }
   .who span { display: block; margin-top: 1.2vh; font-size: clamp(14px, 2.4vh, 26px); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); }
   .who.show { animation: up .6s var(--ease); }
   @keyframes up { from { opacity: 0; transform: translateY(12px); } }
@@ -60,11 +60,11 @@
   .winners span { font-size: 15px; padding: 8px 14px !important; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.3); color: var(--gold); }
   .controls { display: flex; gap: 8px; align-items: center; }
   .btn { min-height: 52px; padding: 0 30px; border-radius: 999px; border: 1px solid transparent; font: 800 16px 'Manrope', sans-serif; cursor: pointer; }
-  .btn-primary { background: linear-gradient(135deg, #3ff0d3, var(--teal) 40%, var(--teal-2)); color: #031210; box-shadow: 0 12px 30px -12px rgba(23,230,196,0.7); }
+  .btn-primary { background: linear-gradient(135deg, #3fd2ee, var(--teal) 40%, var(--teal-2)); color: #04161b; box-shadow: 0 12px 30px -12px rgba(13,192,223,0.7); }
   .btn-primary:disabled { opacity: 0.5; cursor: default; }
   .btn-ghost { background: transparent; color: var(--dim); border-color: var(--hair-strong); padding: 0 18px; font-size: 13px; min-height: 42px; }
   .pool { font-size: 13px; color: var(--faint); margin-right: 8px; white-space: nowrap; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(15,22,20,0.95); border: 1px solid var(--tint-strong); font-size: 14px; z-index: 9; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(22,22,22,0.95); border: 1px solid var(--tint-strong); font-size: 14px; z-index: 9; }
 </style>
 </head>
 <body>

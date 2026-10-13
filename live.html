@@ -9,11 +9,11 @@
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
-    --bg: #030505; --ink: #f1f6f4; --dim: #a3b3af; --faint: #6b7a77;
-    --teal: #17e6c4; --teal-soft: #8ff5e3; --teal-2: #00a693;
+    --bg: #030505; --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080;
+    --teal: #0dc0df; --teal-soft: #86e3f4; --teal-2: #0a9fc0;
     --ease: cubic-bezier(.2, .7, .2, 1);
   }
   * { box-sizing: border-box; }
@@ -24,7 +24,7 @@
   .slide { position: fixed; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity 1.4s var(--ease); }
   .slide.on { opacity: 1; }
   .slide .bg { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: blur(48px) brightness(0.32) saturate(1.25); transform: scale(1.05); }
-  .slide img { position: relative; max-width: 94vw; max-height: 90vh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 40px 120px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(23,230,196,0.18); }
+  .slide img { position: relative; max-width: 94vw; max-height: 90vh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 40px 120px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(13,192,223,0.18); }
   .slide.on img { animation: drift 9s linear forwards; }
   @keyframes drift { from { transform: scale(1); } to { transform: scale(1.035); } }
 
@@ -34,16 +34,16 @@
   .count[hidden] { display: none; }
 
   /* Waiting screen before the first approved photo */
-  .empty { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; background: radial-gradient(50% 60% at 50% 45%, rgba(23,230,196,0.12), transparent 70%), var(--bg); transition: opacity 1s var(--ease); }
+  .empty { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; background: radial-gradient(50% 60% at 50% 45%, rgba(13,192,223,0.12), transparent 70%), var(--bg); transition: opacity 1s var(--ease); }
   .empty.gone { opacity: 0; pointer-events: none; }
   .empty img { height: 22vh; width: auto; margin: 0 auto 4vh; }
-  .empty h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 7vw; line-height: 1; margin: 0; letter-spacing: -0.02em; }
+  .empty h1 { font-family: 'Poppins', sans-serif; font-weight: 900; text-transform: uppercase; color: var(--teal); font-size: 7vw; line-height: 1; margin: 0; letter-spacing: -0.02em; }
   .empty h1 i { display: block; margin-top: 1.4vh; font-size: 2.4vw; font-weight: 400; background: linear-gradient(100deg, var(--teal-soft), var(--teal) 45%, var(--teal-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .empty p { margin: 5vh 0 0; font-size: 1.3vw; letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
   .empty .host { margin-top: 2vh; display: inline-flex; align-items: center; gap: 1vw; font-size: 0.9vw; letter-spacing: 0.26em; text-transform: uppercase; color: var(--faint); font-weight: 800; }
   .empty .host img { height: 2.4vh; margin: 0; }
 
-  .fs { position: fixed; right: 3vw; top: 2.6vh; z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 999px; border: 1px solid rgba(23,230,196,0.4); background: rgba(6,9,8,0.8); color: var(--ink); font: 700 15px 'Manrope', sans-serif; cursor: pointer; transition: opacity .4s; }
+  .fs { position: fixed; right: 3vw; top: 2.6vh; z-index: 6; display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 999px; border: 1px solid rgba(13,192,223,0.4); background: rgba(11,11,11,0.8); color: var(--ink); font: 700 15px 'Manrope', sans-serif; cursor: pointer; transition: opacity .4s; }
   .fs:hover { border-color: var(--teal); color: var(--teal); }
   body.idle .fs, body.full .fs { opacity: 0; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { .slide.on img { animation: none; } .slide { transition-duration: .01s; } }

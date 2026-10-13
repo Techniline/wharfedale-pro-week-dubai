@@ -17,8 +17,9 @@
  * guest uploads, new Cloudinary photos are copied into the Drive "Framed"
  * folder. Deleting a photo on the approval page removes its Drive copy too.
  *
- * Slot booking (register.html): guests book one of the Immersive Audio
- * Experience slots and get a raffle number (SC-001, SC-002, ...) in order.
+ * Slot booking (register.html): guests register and get a raffle number
+ * (SC-001, SC-002, ...) in order, optionally booking an Immersive Audio
+ * Experience slot (slots 1-3 hold 35 each, slot 4 is open).
  * Bookings run one at a time under a lock, so a slot can never go past its
  * capacity, and the same email or phone number can never get a second number.
  * Bookings are copied to the "Soundcheck Registrations" Google Sheet in the
@@ -42,7 +43,7 @@ var CLOUD = 'xccqslt2'; // Cloudinary cloud name (public)
 var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs from the soundcheck preset
 
 var SLOT_COUNT = 4;     // Immersive Audio Experience slots
-var SLOT_CAP = 35;      // guests per slot
+var SLOT_CAPS = [35, 35, 35, 0]; // seats per slot; 0 = open, no limit
 var RAFFLE_PREFIX = 'SC-';
 var RAFFLE_WINNERS = 2; // winners in the on-stage draw
 var REG = 'R_';         // Script Property prefix: one entry per booking, by raffle number
@@ -273,13 +274,17 @@ function publicSlots_() {
   var cache = CacheService.getScriptCache();
   var hit = cache.get(SLOTS_CACHE_KEY);
   if (hit) return JSON.parse(hit);
-  var out = { ok: true, open: isRegOpen_(), cap: SLOT_CAP, slots: slotState_() };
+  var out = { ok: true, open: isRegOpen_(), slots: slotState_() };
   cache.put(SLOTS_CACHE_KEY, JSON.stringify(out), 10);
   return out;
 }
 
 function slotState_() {
-  return counts_().map(function (c, i) { return { n: i + 1, taken: c, left: Math.max(0, SLOT_CAP - c) }; });
+  // left is null for an open slot (no limit)
+  return counts_().map(function (c, i) {
+    var cap = SLOT_CAPS[i] || 0;
+    return { n: i + 1, taken: c, cap: cap, left: cap ? Math.max(0, cap - c) : null };
+  });
 }
 
 // Seats taken per slot, kept as one running tally (updated under the booking
@@ -305,7 +310,8 @@ function book_(body) {
   if (company.length < 2) throw new Error('Enter your company name.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error('Enter a valid email address.');
   if (!phone) throw new Error('Enter a valid phone number.');
-  if (!(slot >= 1 && slot <= SLOT_COUNT && slot % 1 === 0)) throw new Error('Choose a slot.');
+  // 0 = raffle only (no Immersive Audio slot)
+  if (!(slot >= 0 && slot <= SLOT_COUNT && slot % 1 === 0)) throw new Error('Choose a slot.');
 
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(25000)) throw new Error('Lots of people are booking right now. Please tap Book again.');
@@ -322,7 +328,7 @@ function book_(body) {
     }
     if (!isRegOpen_()) throw new Error('Registration is closed.');
     var taken = counts_();
-    if (taken[slot - 1] >= SLOT_CAP) {
+    if (slot && SLOT_CAPS[slot - 1] && taken[slot - 1] >= SLOT_CAPS[slot - 1]) {
       var state = slotState_();
       return { ok: false, full: true, error: 'Slot ' + slot + ' just filled up. Please pick another slot.', slots: state };
     }
@@ -333,7 +339,7 @@ function book_(body) {
     batch[REG_EMAIL + email] = String(n);
     batch[REG_PHONE + phone] = String(n);
     batch.REG_NEXT = String(n + 1);
-    taken[slot - 1]++;
+    if (slot) taken[slot - 1]++;
     batch.REG_COUNTS = JSON.stringify(taken);
     batch.SHEET_DIRTY = '1'; // the Google Sheet catches up in the background, not while the guest waits
     props.setProperties(batch);
@@ -378,7 +384,7 @@ function regDelete_(body) {
     props.deleteProperty(REG_PHONE + r.ph);
     var w = winners_().filter(function (x) { return x !== r.n; });
     var taken = counts_();
-    if (taken[r.s - 1] > 0) taken[r.s - 1]--;
+    if (r.s && taken[r.s - 1] > 0) taken[r.s - 1]--;
     props.setProperties({ REG_WINNERS: JSON.stringify(w), REG_COUNTS: JSON.stringify(taken), SHEET_DIRTY: '1' });
     CacheService.getScriptCache().remove(SLOTS_CACHE_KEY);
     return { ok: true };
@@ -477,7 +483,7 @@ function syncBookingsSheet() {
     props.setProperty('SHEET_DIRTY', '0'); // a booking made during the write marks it again
     var winners = winners_();
     var rows = allRegs_().sort(function (a, b) { return a.n - b.n; }).map(function (r) {
-      return [raffleNo_(r.n), 'Slot ' + r.s, r.name, r.co, r.em, "'" + r.ph,
+      return [raffleNo_(r.n), r.s ? 'Slot ' + r.s : 'Raffle only', r.name, r.co, r.em, "'" + r.ph,
         Utilities.formatDate(new Date(r.t), 'Asia/Dubai', 'yyyy-MM-dd HH:mm:ss'),
         winners.indexOf(r.n) >= 0 ? 'Raffle winner' : 'Booked'];
     });

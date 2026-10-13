@@ -5,7 +5,7 @@
  * when decoding, so sideways-shot photos come out upright.
  */
 (function () {
-  var TEAL = '#17e6c4';
+  var TEAL = '#0dc0df';
   var assets = null;
 
   function loadImg(src) {
@@ -23,8 +23,8 @@
         loadImg('assets/wharfedale-pro.svg'),
         loadImg('assets/techniline.png'),
         document.fonts ? Promise.all([
-          document.fonts.load('400 40px Fraunces'),
-          document.fonts.load('italic 400 40px Fraunces'),
+          document.fonts.load('900 40px Poppins'),
+          document.fonts.load('700 40px Poppins'),
           document.fonts.load('800 20px Manrope')
         ]) : null
       ]);
@@ -113,19 +113,19 @@
       ctx.drawImage(glass, 0, 0, W, bar);
       ctx.restore();
       var tint = ctx.createLinearGradient(0, ph, 0, H);
-      tint.addColorStop(0, 'rgba(3,12,11,0.50)');
-      tint.addColorStop(1, 'rgba(3,10,9,0.86)');
+      tint.addColorStop(0, 'rgba(10,10,10,0.50)');
+      tint.addColorStop(1, 'rgba(9,9,9,0.86)');
       ctx.fillStyle = tint;
       ctx.fillRect(0, ph, W, bar);
       var glow = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.7);
-      glow.addColorStop(0, 'rgba(23,230,196,0.20)');
-      glow.addColorStop(1, 'rgba(23,230,196,0)');
+      glow.addColorStop(0, 'rgba(13,192,223,0.20)');
+      glow.addColorStop(1, 'rgba(13,192,223,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, ph, W, bar);
       // soft fade above the bar so there's no hard edge
       var fade = ctx.createLinearGradient(0, ph - bar * 0.55, 0, ph);
-      fade.addColorStop(0, 'rgba(3,12,11,0)');
-      fade.addColorStop(1, 'rgba(3,12,11,0.42)');
+      fade.addColorStop(0, 'rgba(10,10,10,0)');
+      fade.addColorStop(1, 'rgba(10,10,10,0.42)');
       ctx.fillStyle = fade;
       ctx.fillRect(0, ph - bar * 0.55, W, bar * 0.55);
 
@@ -139,7 +139,7 @@
       ctx.restore();
 
       // thin teal line along the top edge of the bar
-      ctx.fillStyle = 'rgba(23,230,196,0.55)';
+      ctx.fillStyle = 'rgba(13,192,223,0.55)';
       ctx.fillRect(0, ph, W, Math.max(2, Math.round(W * 0.0022)));
 
       var pad = W * 0.045, mid = ph + bar / 2;
@@ -150,9 +150,9 @@
       var ly = H - bar * 0.1 - lh;
       var lcx = pad + lw / 2, lcy = ly + lh * 0.3;
       var shade = ctx.createRadialGradient(lcx, lcy, 0, lcx, lcy, lw * 0.85);
-      shade.addColorStop(0, 'rgba(4,8,7,0.62)');
-      shade.addColorStop(0.55, 'rgba(4,8,7,0.3)');
-      shade.addColorStop(1, 'rgba(4,8,7,0)');
+      shade.addColorStop(0, 'rgba(8,8,8,0.62)');
+      shade.addColorStop(0.55, 'rgba(8,8,8,0.3)');
+      shade.addColorStop(1, 'rgba(8,8,8,0)');
       ctx.fillStyle = shade;
       ctx.fillRect(lcx - lw, lcy - lw, lw * 2, lw * 2);
       ctx.save();
@@ -182,30 +182,27 @@
       // ---- Soundcheck / Wharfedale Pro Week - Dubai, shrunk if it would reach the right block
       var tSize = W * (portrait ? 0.06 : 0.04), sSize = W * (portrait ? 0.0285 : 0.021);
       var sub = 'Wharfedale Pro Week ' + dot + ' Dubai';
-      ctx.font = 'italic 400 ' + sSize + 'px Fraunces, Georgia, serif';
+      ctx.font = '700 ' + sSize + 'px Poppins, Manrope, sans-serif';
       var subW = ctx.measureText(sub).width;
-      ctx.font = '400 ' + tSize + 'px Fraunces, Georgia, serif';
+      ctx.font = '900 ' + tSize + 'px Poppins, Manrope, sans-serif';
       var room = (right - hostW - W * 0.03) - x;
-      var fit = Math.min(1, room / Math.max(subW, ctx.measureText('Soundcheck').width));
+      var fit = Math.min(1, room / Math.max(subW, ctx.measureText('SOUNDCHECK').width));
       tSize *= fit; sSize *= fit;
       var blockH = tSize * 0.95 + W * 0.006 + sSize;
       var top = mid - blockH / 2;
       ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '400 ' + tSize + 'px Fraunces, Georgia, serif';
-      ctx.fillText('Soundcheck', x, top + tSize * 0.78);
-      ctx.font = 'italic 400 ' + sSize + 'px Fraunces, Georgia, serif';
-      var sw = ctx.measureText(sub).width;
-      var grad = ctx.createLinearGradient(x, 0, x + sw, 0);
-      grad.addColorStop(0, '#8ff5e3'); grad.addColorStop(0.45, TEAL); grad.addColorStop(1, '#00a693');
-      ctx.fillStyle = grad;
+      ctx.fillStyle = TEAL;
+      ctx.font = '900 ' + tSize + 'px Poppins, Manrope, sans-serif';
+      ctx.fillText('SOUNDCHECK', x, top + tSize * 0.78);
+      ctx.font = '700 ' + sSize + 'px Poppins, Manrope, sans-serif';
+      ctx.fillStyle = '#d9d9d9';
       ctx.fillText(sub, x, top + tSize * 0.95 + W * 0.006 + sSize * 0.8);
 
       // draw the right block, vertically centred in the bar
       var blockR = mSize + gap * 1.6 + hSize + gap + tlh;
       var y0 = mid - blockR / 2;
       ctx.font = '700 ' + mSize + 'px Manrope, Arial, sans-serif';
-      ctx.fillStyle = '#8ff5e3';
+      ctx.fillStyle = '#86e3f4';
       drawSpaced(ctx, meta, right - metaW, y0 + mSize * 0.8, mSize * 0.16);
       y0 += mSize + gap * 1.6;
       ctx.font = '800 ' + hSize + 'px Manrope, Arial, sans-serif';
