@@ -10,241 +10,526 @@
 <link rel="icon" type="image/png" href="assets/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
-    --bg: #0b0b0b; --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080; --hair: rgba(255,255,255,0.10); --hair-strong: rgba(255,255,255,0.18);
-    --teal: #0dc0df; --teal-soft: #86e3f4; --teal-2: #0a9fc0; --tint: rgba(13,192,223,0.10); --tint-strong: rgba(13,192,223,0.25);
+    --bg: #0b0b0b; --ink: #f5f5f5; --dim: #b5b5b5; --faint: #7d7d7d; --grey: #d9d9d9;
+    --hair: rgba(255,255,255,0.10); --hair-strong: rgba(255,255,255,0.18);
+    --cyan: #0dc0df; --cyan-soft: #86e3f4; --cyan-2: #0a9fc0; --teal: #019298;
     --red: #ff8a95; --gold: #ffd666; --ease: cubic-bezier(.2,.7,.2,1);
+    --cell: clamp(96px, 21vh, 250px);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body { margin: 0; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  body { margin: 0; color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; }
   [hidden] { display: none !important; }
-  .glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 50% 42%, rgba(13,192,223,0.16), transparent 70%); transition: opacity .6s; }
-  body.won .glow { background: radial-gradient(55% 45% at 50% 42%, rgba(13,192,223,0.32), transparent 70%); }
+  button { font: inherit; }
 
-  /* PIN */
-  .lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 5; background: var(--bg); }
+  /* ---------- PIN ---------- */
+  .lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 30; background: rgba(0,0,0,0.65); }
   .lock form { width: 100%; max-width: 340px; text-align: center; }
-  .lock img { height: 72px; margin-bottom: 22px; }
-  .lock h1 { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 900; text-transform: uppercase; color: var(--teal); font-size: 34px; margin: 0; }
-  .lock p { color: var(--dim); font-size: 14px; margin: 18px 0 14px; }
-  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.35); color: var(--ink); }
-  .lock input:focus { outline: none; border-color: var(--teal); }
+  .lock .wm { font: 900 44px/1 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; }
+  .lock p { color: var(--dim); font-size: 14px; margin: 16px 0; }
+  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.5); color: var(--ink); }
+  .lock input:focus { outline: none; border-color: var(--cyan); }
+  .lock .go { width: 100%; margin-top: 12px; min-height: 52px; border: 0; border-radius: 999px; background: var(--cyan); color: #04161b; font-weight: 800; font-size: 16px; cursor: pointer; }
   .lock .err { color: var(--red); font-size: 13px; min-height: 20px; margin: 10px 0 0; }
+  .lock a { color: var(--dim); font-size: 13px; }
 
-  .stage { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 3vh 4vw; }
+  /* ---------- stage ---------- */
+  .stage { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 2.6vh 3vw; isolation: isolate; }
+  .spot { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.13), rgba(0,0,0,0.0) 60%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.75)); transition: opacity .6s; }
+  body.won .spot { background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.26), rgba(0,0,0,0.0) 62%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.78)); }
+
+  /* entries drifting in the background */
+  .pool-rows { position: absolute; inset: 0; z-index: -2; display: flex; flex-direction: column; justify-content: space-around; padding: 9vh 0; opacity: 0.11; pointer-events: none; transition: opacity .8s; overflow: hidden; }
+  body.spinning .pool-rows { opacity: 0.2; }
+  body.won .pool-rows { opacity: 0.05; }
+  .pool-row { white-space: nowrap; font: 800 clamp(16px, 2.6vh, 30px) 'Poppins', sans-serif; letter-spacing: 0.06em; color: var(--ink); will-change: transform; }
+  .pool-row span { margin-right: 2.2em; }
+  .pool-row span.out { opacity: 0.25; text-decoration: line-through; }
+
   .top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-  .top img.wp { height: clamp(44px, 7vh, 80px); }
-  .top img.tl { height: clamp(14px, 2.2vh, 24px); opacity: 0.85; }
-  .top .host { font-size: clamp(10px, 1.3vh, 13px); letter-spacing: 0.22em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 1.6vw; }
+  .brand img { height: clamp(40px, 7vh, 84px); }
+  .wm { font: 900 clamp(26px, 5.4vh, 64px)/0.92 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: -0.01em; }
+  .wm small { display: block; font-size: 0.42em; font-weight: 800; color: var(--grey); margin-top: 0.12em; }
+  .host { font-size: clamp(10px, 1.3vh, 13px); font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
+  .host img { height: clamp(16px, 2.6vh, 28px); }
+  .demo-tag { margin-left: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.12); border: 1px solid rgba(255,214,102,0.4); color: var(--gold); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; }
 
   .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; }
-  .eyebrow { font-size: clamp(12px, 1.8vh, 18px); font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal); }
-  .title { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 800; font-size: clamp(30px, 6vh, 64px); margin: 1vh 0 0; }
-  .title em { font-style: normal; color: var(--teal); }
-  .num { font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 900; font-size: clamp(90px, 26vh, 300px); line-height: 1; margin: 4vh 0 2vh; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .num.rolling { color: var(--dim); }
-  body.won .num { color: var(--ink); text-shadow: 0 0 60px rgba(13,192,223,0.45); animation: land .6s var(--ease); }
-  @keyframes land { 0% { transform: scale(0.92); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
-  .who { min-height: 13vh; }
-  .who b { display: block; font-family: 'Poppins', 'Manrope', sans-serif; font-weight: 800; font-size: clamp(30px, 6vh, 66px); line-height: 1.1; }
-  .who span { display: block; margin-top: 1.2vh; font-size: clamp(14px, 2.4vh, 26px); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); }
-  .who.show { animation: up .6s var(--ease); }
-  @keyframes up { from { opacity: 0; transform: translateY(12px); } }
-  .hint { color: var(--faint); font-size: clamp(12px, 1.7vh, 16px); }
+  .eyebrow { font-size: clamp(12px, 1.9vh, 20px); font-weight: 800; letter-spacing: 0.32em; text-transform: uppercase; color: var(--cyan); min-height: 1.4em; }
+  .title { font: 800 clamp(26px, 5.4vh, 60px)/1.05 'Poppins', sans-serif; margin: 1.2vh 0 3vh; }
+  .title em { font-style: normal; color: var(--cyan); }
 
+  /* ---------- reels ---------- */
+  .machine { position: relative; display: flex; align-items: center; gap: clamp(6px, 1vw, 16px); padding: clamp(14px, 2.4vh, 28px) clamp(18px, 2.6vw, 40px); border-radius: 28px; background: linear-gradient(180deg, rgba(20,20,20,0.92), rgba(6,6,6,0.95)); border: 1px solid rgba(13,192,223,0.35); box-shadow: 0 40px 100px -40px rgba(13,192,223,0.55), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .machine::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--cyan), var(--teal), transparent); }
+  .prefix { font: 900 calc(var(--cell) * 0.62)/1 'Poppins', sans-serif; color: var(--grey); padding-right: 0.08em; }
+  .reel { position: relative; width: calc(var(--cell) * 0.64); height: var(--cell); overflow: hidden; border-radius: 16px; background: linear-gradient(180deg, #050505, #141414 50%, #050505); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 18px 24px -12px rgba(0,0,0,0.9), inset 0 -18px 24px -12px rgba(0,0,0,0.9); }
+  .reel::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.75), transparent 26%, transparent 74%, rgba(0,0,0,0.75)); }
+  .strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+  .strip div { height: var(--cell); display: grid; place-items: center; font: 900 calc(var(--cell) * 0.72)/1 'Poppins', sans-serif; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .reel.fast .strip { filter: blur(3px); }
+  .reel.locked { box-shadow: inset 0 0 0 2px var(--cyan), 0 0 34px -4px rgba(13,192,223,0.7); animation: thunk .35s var(--ease); }
+  .reel.locked .strip div { color: var(--cyan); }
+  @keyframes thunk { 0% { transform: translateY(0); } 35% { transform: translateY(6px) scale(0.98); } 100% { transform: none; } }
+  .flash { position: absolute; inset: -2px; border-radius: 28px; pointer-events: none; opacity: 0; background: radial-gradient(closest-side, rgba(134,227,244,0.55), transparent); }
+  body.won .flash { animation: flash .9s ease-out; }
+  @keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ---------- winner card ---------- */
+  .who { min-height: clamp(110px, 17vh, 210px); margin-top: 3.2vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .who .hint { color: var(--faint); font-size: clamp(13px, 1.8vh, 18px); margin: 0; }
+  .who .hint kbd { font: 800 0.9em 'Manrope', sans-serif; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--hair-strong); color: var(--dim); }
+  .who .name { font: 800 clamp(30px, 6.6vh, 78px)/1.05 'Poppins', sans-serif; text-shadow: 0 0 40px rgba(13,192,223,0.35); }
+  .who .co { margin-top: 1.2vh; font-size: clamp(14px, 2.4vh, 28px); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cyan); }
+  .who .tag { margin-top: 1.4vh; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--hair-strong); color: var(--dim); font-size: clamp(11px, 1.6vh, 16px); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+  .who.show > * { animation: rise .7s var(--ease) both; }
+  .who.show .co { animation-delay: .12s; } .who.show .tag { animation-delay: .24s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } }
+
+  /* ---------- bottom bar ---------- */
   .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
-  .winners { display: flex; gap: 8px; flex-wrap: wrap; max-width: 70%; }
-  .winners span { font-size: 15px; padding: 8px 14px !important; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.3); color: var(--gold); }
-  .controls { display: flex; gap: 8px; align-items: center; }
-  .btn { min-height: 52px; padding: 0 30px; border-radius: 999px; border: 1px solid transparent; font: 800 16px 'Manrope', sans-serif; cursor: pointer; }
-  .btn-primary { background: linear-gradient(135deg, #3fd2ee, var(--teal) 40%, var(--teal-2)); color: #04161b; box-shadow: 0 12px 30px -12px rgba(13,192,223,0.7); }
-  .btn-primary:disabled { opacity: 0.5; cursor: default; }
-  .btn-ghost { background: transparent; color: var(--dim); border-color: var(--hair-strong); padding: 0 18px; font-size: 13px; min-height: 42px; }
-  .pool { font-size: 13px; color: var(--faint); margin-right: 8px; white-space: nowrap; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(22,22,22,0.95); border: 1px solid var(--tint-strong); font-size: 14px; z-index: 9; }
+  .winners { display: flex; gap: 10px; flex-wrap: wrap; max-width: 60%; }
+  .winners > span { display: inline-flex; align-items: center; gap: 10px; font-size: clamp(12px, 1.6vh, 16px); font-weight: 800; padding: 8px 14px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.32); color: var(--gold); }
+  .winners b { color: var(--ink); font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .pool { font-size: 13px; color: var(--faint); margin-right: 6px; white-space: nowrap; }
+  .pool b { color: var(--ink); }
+  select.filter { min-height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.6); color: var(--dim); font: 700 13px 'Manrope', sans-serif; cursor: pointer; }
+  .btn { min-height: 52px; padding: 0 30px; border-radius: 999px; border: 1px solid transparent; font-weight: 800; font-size: 16px; cursor: pointer; white-space: nowrap; }
+  .btn-primary { background: linear-gradient(135deg, #3fd2ee, var(--cyan) 40%, var(--cyan-2)); color: #04161b; box-shadow: 0 12px 30px -12px rgba(13,192,223,0.8); }
+  .btn-primary:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+  .btn-ghost { background: rgba(0,0,0,0.5); color: var(--dim); border-color: var(--hair-strong); padding: 0 16px; font-size: 13px; min-height: 42px; }
+  .icon-btn { width: 42px; padding: 0; display: inline-grid; place-items: center; }
+
+  /* draw log */
+  .log { position: fixed; right: 3vw; bottom: 11vh; width: min(460px, 92vw); max-height: 52vh; overflow: auto; z-index: 15; padding: 16px 18px; border-radius: 18px; background: rgba(8,8,8,0.96); border: 1px solid var(--hair-strong); font-size: 12.5px; color: var(--dim); }
+  .log h4 { margin: 0 0 10px; font: 800 14px 'Poppins', sans-serif; color: var(--ink); }
+  .log .row { padding: 9px 0; border-top: 1px solid var(--hair); line-height: 1.5; }
+  .log code { font-size: 11px; color: var(--faint); word-break: break-all; }
+  .log b { color: var(--ink); }
+
+  canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(12,12,12,0.96); border: 1px solid rgba(13,192,223,0.35); font-size: 14px; z-index: 40; }
+  @media (max-width: 760px) { .bottom { flex-direction: column; align-items: stretch; } .winners { max-width: none; } .controls { justify-content: center; } .host { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .pool-row { transform: none !important; } }
 </style>
 </head>
 <body>
-<div class="glow"></div>
 
 <section class="lock" id="lock">
   <form id="pin-form" autocomplete="off">
-    <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
-    <h1>Raffle draw</h1>
-    <p>Enter the team PIN to start the draw.</p>
+    <div class="wm">Soundcheck</div>
+    <p>Enter the team PIN to open the raffle draw.</p>
     <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" aria-label="PIN" required>
-    <button class="btn btn-primary" type="submit" style="width:100%;margin-top:12px">Unlock</button>
+    <button class="go" type="submit">Open the draw</button>
     <p class="err" id="pin-err" role="alert"></p>
+    <a href="?demo=1">Try a demo with 150 sample guests</a>
   </form>
 </section>
 
 <main class="stage" id="stage" hidden>
-  <div class="top">
-    <img class="wp" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
-    <div class="host">Hosted by <img class="tl" src="assets/techniline.png" alt="Techniline"></div>
-  </div>
-  <div class="center">
-    <div class="eyebrow" id="eyebrow">Soundcheck · On-stage raffle</div>
-    <h1 class="title">And the winner <em>is</em></h1>
-    <div class="num" id="num">SC-···</div>
-    <div class="who" id="who"><p class="hint">Press <b>Space</b> or <b>Draw</b> to pick a winner</p></div>
-  </div>
-  <div class="bottom">
+  <div class="spot"></div>
+  <div class="pool-rows" id="pool-rows" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="brand">
+      <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+      <div class="wm">Soundcheck<small>2026</small></div>
+      <span class="demo-tag" id="demo-tag" hidden>DEMO · SAMPLE DATA</span>
+    </div>
+    <div class="host">Hosted by <img src="assets/techniline.png" alt="Techniline"></div>
+  </header>
+
+  <section class="center">
+    <div class="eyebrow" id="eyebrow">On-stage raffle</div>
+    <h1 class="title" id="title">And the winner <em>is</em></h1>
+    <div class="machine" id="machine">
+      <span class="prefix">SC-</span>
+      <div id="reels" style="display:flex;gap:clamp(6px,0.8vw,12px)"></div>
+      <div class="flash"></div>
+    </div>
+    <div class="who" id="who"><p class="hint">Press <kbd>Space</kbd> or <b>Draw</b> to pick a winner</p></div>
+  </section>
+
+  <footer class="bottom">
     <div class="winners" id="winners"></div>
     <div class="controls">
       <span class="pool" id="pool"></span>
+      <select class="filter" id="filter" aria-label="Who is in the draw">
+        <option value="all">All guests</option>
+        <option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option><option value="4">Slot 4</option>
+        <option value="0">No slot</option>
+      </select>
+      <button class="btn btn-ghost icon-btn" id="sound" type="button" title="Sound (M)" aria-label="Sound on">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path id="snd-wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
+      </button>
+      <button class="btn btn-ghost" id="logbtn" type="button" title="Draw log (L)">Log</button>
       <button class="btn btn-ghost" id="redraw" type="button" hidden>Not here? Redraw</button>
-      <button class="btn btn-ghost" id="reset" type="button">Reset draw</button>
+      <button class="btn btn-ghost" id="reset" type="button">Reset</button>
       <button class="btn btn-primary" id="draw" type="button">Draw</button>
     </div>
-  </div>
+  </footer>
 </main>
+
+<aside class="log" id="log" hidden><h4>Draw log</h4><div id="log-rows"></div></aside>
+<canvas class="confetti" id="confetti"></canvas>
 <div class="toast" id="toast" hidden></div>
 
 <script>
 var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
-var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, rolling = false;
-var ORD = ["1st", "2nd", "3rd"];
+var DEMO = /[?&]demo=1\b/.test(location.search);
+var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
-function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
-function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3000); }
+var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, busy = false, soundOn = true, digits = 3;
+var ORD = ["1st", "2nd", "3rd", "4th", "5th"];
+
+function raffleNo(n) { var s = String(n); while (s.length < digits) s = "0" + s; return "SC-" + s; }
+function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3200); }
 function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
 function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function byNo(n) { for (var i = 0; i < regs.length; i++) if (regs[i].n === n) return regs[i]; return null; }
 
+// ================================================================ data
 function load() {
+  if (DEMO) return Promise.resolve(render());
   return fetch(API + "?action=regs&pin=" + encodeURIComponent(pin) + "&t=" + Date.now())
     .then(function (r) { return r.json(); })
     .then(function (res) {
-      if (!res.ok) throw new Error(res.error || "Couldn't load bookings");
+      if (!res.ok) throw new Error(res.error || "Couldn't load guests");
       regs = res.regs || [];
       maxWinners = res.maxWinners || maxWinners;
-      // merge with this screen's own picks, in case a save hasn't reached the server yet
+      // keep this screen's own picks if their save hasn't reached the server yet
       var sw = res.winners || [], ss = res.skipped || [];
       skipped = ss.concat(skipped.filter(function (n) { return ss.indexOf(n) < 0; }));
       winners = sw.concat(winners.filter(function (n) { return sw.indexOf(n) < 0; }))
         .filter(function (n) { return skipped.indexOf(n) < 0; }).slice(0, maxWinners);
-      renderSide();
+      render();
     });
 }
-function pool() { return regs.filter(function (r) { return winners.indexOf(r.n) < 0 && skipped.indexOf(r.n) < 0; }); }
-function byNo(n) { for (var i = 0; i < regs.length; i++) if (regs[i].n === n) return regs[i]; return null; }
-function renderSide() {
+
+function post(body) {
+  if (DEMO) return Promise.resolve({ ok: true });
+  body.pin = pin;
+  return fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) { if (!res.ok) throw new Error(res.error); return res; });
+}
+
+// 150 made-up guests for rehearsing the draw (never sent anywhere)
+function demoGuests() {
+  var first = ["Aisha", "Omar", "Priya", "James", "Fatima", "Rohan", "Sofia", "Khalid", "Mei", "Daniel", "Layla", "Arjun", "Nadia", "Lucas", "Hana", "Yusuf", "Elena", "Ravi", "Sara", "Marco", "Zainab", "Tom", "Leila", "Imran", "Grace", "Hamad", "Anika", "Chris", "Noor", "Vikram", "Mariam", "Ben", "Rania", "Kiran", "Ali", "Julia", "Faisal", "Meera", "Adam", "Huda"];
+  var last = ["Rahman", "Haddad", "Nair", "Carter", "Al Mansoori", "Mehta", "Rossi", "Saeed", "Lin", "Brooks", "Hassan", "Pillai", "Karim", "Moreau", "Yusuf", "Petrova", "Kapoor", "Khan", "Bianchi", "Al Suwaidi", "Walsh", "Aziz", "Fernandes", "Iyer", "Al Hashimi", "Murphy", "Qureshi", "Das", "Nasser", "Lopez"];
+  var cos = ["Blue Wave Audio", "Gulf Stage Systems", "Arena Pro AV", "Nightline Events", "Studio Eleven", "Desert Sound Co", "Skyline Integration", "Pulse Live", "Marina AV Rentals", "Echo Systems ME", "Bayside Hospitality", "Prime Venues", "Crescent Media", "Atlas Install", "Harbour Hotels", "Soundforge", "Falcon Events", "Opal Audio", "Zenith Staging", "Coral Leisure"];
+  var r = mulberry(20261014), out = [];
+  for (var i = 1; i <= 150; i++) {
+    var slot = r() < 0.88 ? 1 + Math.floor(r() * 4) : 0;
+    out.push({ n: i, s: slot, name: first[Math.floor(r() * first.length)] + " " + last[Math.floor(r() * last.length)], co: cos[Math.floor(r() * cos.length)] });
+  }
+  return out;
+}
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ================================================================ fair draw
+// Who can win right now: not a past winner, not skipped, and inside the chosen filter.
+function pool() {
+  var f = $("filter").value;
+  return regs.filter(function (r) {
+    if (winners.indexOf(r.n) >= 0 || skipped.indexOf(r.n) >= 0) return false;
+    return f === "all" || String(r.s || 0) === f;
+  });
+}
+// Uniform random integer in [0, n) from the browser's cryptographic generator.
+// Values from the top, uneven slice of the 32-bit range are thrown away and
+// redrawn, so every guest has exactly the same chance (no modulo bias).
+function fairIndex(n) {
+  var limit = Math.floor(4294967296 / n) * n, buf = new Uint32Array(1), x;
+  do { crypto.getRandomValues(buf); x = buf[0]; } while (x >= limit);
+  return { index: x % n, raw: x };
+}
+function fingerprint(list) {
+  var text = list.map(function (r) { return r.n; }).sort(function (a, b) { return a - b; }).join(",");
+  if (!(window.crypto && crypto.subtle)) return Promise.resolve("n/a");
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (h) {
+    return Array.prototype.map.call(new Uint8Array(h), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("").slice(0, 16);
+  });
+}
+
+// ================================================================ screen
+function render() {
+  var maxN = regs.reduce(function (m, r) { return Math.max(m, r.n); }, 0);
+  var want = Math.max(3, String(maxN).length);
+  if (want !== digits || !$("reels").children.length) { digits = want; buildReels(); }
   var box = $("winners"); box.innerHTML = "";
   winners.forEach(function (n, i) {
     var r = byNo(n), s = document.createElement("span");
-    s.textContent = (ORD[i] || (i + 1) + "th") + "  " + raffleNo(n) + (r ? "  " + String.fromCharCode(183) + "  " + r.name : "");
+    s.innerHTML = "<span></span><b></b>";
+    s.firstChild.textContent = (ORD[i] || (i + 1) + "th") + "  " + raffleNo(n);
+    s.lastChild.textContent = r ? r.name : "";
     box.appendChild(s);
   });
   var left = pool().length, done = winners.length >= maxWinners;
-  $("pool").textContent = done ? "" : left + (left === 1 ? " number in the draw" : " numbers in the draw");
-  $("draw").disabled = done || !left;
-  $("draw").textContent = done ? "Both winners drawn" : "Draw winner " + (winners.length + 1);
-  if (!rolling) $("eyebrow").textContent = done
-    ? "Soundcheck " + String.fromCharCode(183) + " Congratulations to our winners"
-    : "Soundcheck " + String.fromCharCode(183) + " Winner " + (winners.length + 1) + " of " + maxWinners;
+  $("pool").innerHTML = done ? "" : "<b>" + left + "</b> " + (left === 1 ? "entry" : "entries") + " in the draw";
+  $("draw").disabled = busy || done || !left;
+  $("draw").textContent = done ? "All winners drawn" : "Draw winner " + (winners.length + 1);
+  if (!busy) $("eyebrow").textContent = done ? "Congratulations to our winners" : "On-stage raffle " + DOT + " Winner " + (winners.length + 1) + " of " + maxWinners;
+  buildRows();
 }
 
-// Fair pick using the browser's cryptographic random numbers
-function pick(list) {
-  var a = new Uint32Array(1); crypto.getRandomValues(a);
-  return list[a[0] % list.length];
+// Faint rows of every entry number drifting behind the machine
+var rowAnim = [], rowBoost = 1;
+function buildRows() {
+  var box = $("pool-rows");
+  if (!regs.length) { box.innerHTML = ""; rowAnim = []; return; }
+  var out = winners.concat(skipped);
+  box.innerHTML = [0, 1, 2, 3, 4].map(function (k) {
+    var cut = (k * 13) % regs.length, shifted = regs.slice(cut).concat(regs.slice(0, cut));
+    return "<div class='pool-row'>" + shifted.concat(shifted).map(function (r) {
+      return "<span" + (out.indexOf(r.n) >= 0 ? " class='out'" : "") + ">" + raffleNo(r.n) + "</span>";
+    }).join("") + "</div>";
+  }).join("");
+  rowAnim = Array.prototype.map.call(box.children, function (el, k) { return { el: el, x: -Math.random() * 400, dir: k % 2 ? 1 : -1, speed: 0.25 + k * 0.06 }; });
 }
+(function drift() {
+  rowAnim.forEach(function (r) {
+    var half = r.el.scrollWidth / 2;
+    r.x += r.dir * r.speed * rowBoost;
+    if (r.x < -half) r.x += half;
+    if (r.x > 0) r.x -= half;
+    r.el.style.transform = "translateX(" + r.x + "px)";
+  });
+  requestAnimationFrame(drift);
+})();
 
+// ================================================================ reels
+var reels = [];
+function buildReels() {
+  var box = $("reels"); box.innerHTML = ""; reels = [];
+  for (var i = 0; i < digits; i++) {
+    var reel = document.createElement("div"); reel.className = "reel";
+    var strip = document.createElement("div"); strip.className = "strip";
+    var html = "";
+    for (var k = 0; k < 20; k++) html += "<div>" + (k % 10) + "</div>";
+    strip.innerHTML = html;
+    reel.appendChild(strip); box.appendChild(reel);
+    reels.push({ el: reel, strip: strip, pos: 0, vel: 0, state: "idle" });
+    paintReel(reels[i]);
+  }
+}
+function cellH() { return reels.length ? reels[0].el.clientHeight : 200; }
+function paintReel(r) {
+  var p = ((r.pos % 10) + 10) % 10;
+  r.strip.style.transform = "translateY(" + (-p * cellH()) + "px)";
+}
+var lastT = 0;
+function loop(t) {
+  var dt = lastT ? Math.min(50, t - lastT) / 1000 : 0.016; lastT = t;
+  var moving = false;
+  reels.forEach(function (r) {
+    if (r.state === "spin") { r.pos += r.vel * dt; moving = true; }
+    else if (r.state === "stop") {
+      var k = Math.min(1, (t - r.t0) / r.dur), e = 1 - Math.pow(1 - k, 4); // ease-out quart
+      var before = Math.floor(r.pos);
+      r.pos = r.from + (r.to - r.from) * e;
+      if (Math.floor(r.pos) !== before) tick(1 - k);
+      r.el.classList.toggle("fast", k < 0.55);
+      if (k >= 1) { r.pos = r.to; r.state = "locked"; r.el.classList.remove("fast"); r.el.classList.add("locked"); thunk(); if (r.done) r.done(); }
+      else moving = true;
+    }
+    paintReel(r);
+  });
+  if (moving) requestAnimationFrame(loop); else lastT = 0;
+}
+function spinAll() {
+  reels.forEach(function (r, i) { r.state = "spin"; r.vel = 26 + i * 4; r.el.classList.remove("locked"); r.el.classList.add("fast"); });
+  lastT = 0; requestAnimationFrame(loop);
+}
+function stopReel(r, digit, dur) {
+  return new Promise(function (done) {
+    var base = Math.ceil(r.pos / 10) * 10 + 20; // at least two more full turns before landing
+    r.from = r.pos; r.to = base + digit; r.t0 = performance.now(); r.dur = dur; r.state = "stop"; r.done = done;
+  });
+}
+function wait(ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); }
+
+// ================================================================ the draw
 function draw() {
-  if (rolling) return;
-  if (winners.length >= maxWinners) { toast("Both winners have been drawn."); return; }
+  if (busy) return;
+  if (winners.length >= maxWinners) { toast("All winners have been drawn."); return; }
   var list = pool();
-  if (!list.length) { toast("No numbers left in the draw."); return; }
-  rolling = true;
-  $("redraw").hidden = true;
-  $("eyebrow").textContent = "Soundcheck " + String.fromCharCode(183) + " Winner " + (winners.length + 1) + " of " + maxWinners;
-  document.body.classList.remove("won");
-  $("draw").disabled = true;
-  var winner = pick(list), num = $("num"), who = $("who");
-  who.innerHTML = ""; who.className = "who";
-  num.classList.add("rolling");
-  var start = performance.now(), total = list.length > 1 ? 4200 : 600, last = 0;
-  (function tick(now) {
-    var p = Math.min(1, (now - start) / total);
-    var gap = 40 + 360 * p * p * p; // slows down towards the end
-    if (now - last >= gap) { num.textContent = raffleNo(pick(list).n); last = now; }
-    if (p < 1) { requestAnimationFrame(tick); return; }
-    num.textContent = raffleNo(winner.n);
-    num.classList.remove("rolling");
-    document.body.classList.add("won");
-    who.innerHTML = "<b></b><span></span>";
-    who.querySelector("b").textContent = winner.name;
-    who.querySelector("span").textContent = winner.co;
+  if (!list.length) { toast("No entries left in this draw."); return; }
+  busy = true; audioInit();
+  document.body.classList.remove("won"); document.body.classList.add("spinning");
+  $("redraw").hidden = true; $("draw").disabled = true;
+  var who = $("who"); who.className = "who"; who.innerHTML = "";
+
+  // The winner is decided here, before anything moves; the reels then land on it.
+  var pick = fairIndex(list.length), winner = list[pick.index];
+  var target = String(winner.n); while (target.length < digits) target = "0" + target;
+  var stamp = new Date(), fpP = fingerprint(list);
+
+  $("eyebrow").textContent = "Shuffling " + list.length + " entries";
+  rowBoost = 7;
+  spinAll();
+  var seq = wait(1700);
+  reels.forEach(function (r, i) {
+    var isLast = i === reels.length - 1;
+    seq = seq.then(function () {
+      if (isLast) $("eyebrow").textContent = "And the last digit is";
+      return stopReel(r, Number(target[i]), isLast ? 2300 : 1050);
+    }).then(function () { return wait(isLast ? 0 : 260); });
+  });
+  seq.then(function () {
+    rowBoost = 1;
+    document.body.classList.remove("spinning"); document.body.classList.add("won");
+    who.innerHTML = "<div class='name'></div><div class='co'></div><div class='tag'></div>";
+    who.querySelector(".name").textContent = winner.name;
+    who.querySelector(".co").textContent = winner.co;
+    who.querySelector(".tag").textContent = raffleNo(winner.n) + "  " + DOT + "  " + (winner.s ? "Slot " + winner.s : "No slot");
     who.className = "who show";
-    winners.push(winner.n);
-    current = winner;
-    $("redraw").hidden = false;
-    rolling = false;
-    renderSide();
-    fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, n: winner.n }) })
-      .then(function (r) { return r.json(); })
-      .then(function (res) { if (!res.ok) throw new Error(res.error); })
-      .catch(function () { toast("Winner shown, but not saved online. Check the connection."); });
-  })(start);
+    winners.push(winner.n); current = winner;
+    confetti(); chime();
+    busy = false; $("redraw").hidden = false;
+    render();
+    $("eyebrow").textContent = "Winner " + winners.length + " of " + maxWinners;
+    fpP.then(function (fp) { addLog({ at: stamp, no: raffleNo(winner.n), name: winner.name, pool: list.length, fp: fp, idx: pick.index, raw: pick.raw, filter: $("filter").value }); });
+    post({ action: "winner", n: winner.n }).catch(function () { toast("Winner shown, but not saved online. Check the connection."); });
+  });
 }
 
-$("draw").addEventListener("click", draw);
-document.addEventListener("keydown", function (e) {
-  if ($("stage").hidden) return;
-  if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); draw(); }
-});
-$("reset").addEventListener("click", function () {
-  if (!confirm("Reset the draw? The winners so far go back into the draw and you start again from winner 1.")) return;
-  fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, reset: true }) })
-    .then(function (r) { return r.json(); })
-    .then(function (res) {
-      if (!res.ok) throw new Error(res.error);
-      winners = []; skipped = []; current = null; $("redraw").hidden = true; renderSide();
-      document.body.classList.remove("won");
-      $("num").textContent = "SC-" + String.fromCharCode(183, 183, 183);
-      $("who").innerHTML = "<p class='hint'>Press <b>Space</b> or <b>Draw</b> to pick a winner</p>";
-      toast("Draw reset");
-    })
-    .catch(function (e) { toast("Didn't reset: " + (e.message || "try again")); });
-});
-
-// Winner isn't in the room: they're taken off the winners and out of the draw, then we draw again
-$("redraw").addEventListener("click", function () {
-  if (!current || rolling) return;
+function redraw() {
+  if (!current || busy) return;
   var gone = current;
-  if (!confirm("Redraw? " + raffleNo(gone.n) + " (" + gone.name + ") is removed from the winners and can't be drawn again.")) return;
+  if (!confirm("Redraw? " + raffleNo(gone.n) + " (" + gone.name + ") leaves the winners and can't be drawn again.")) return;
   winners = winners.filter(function (n) { return n !== gone.n; });
   if (skipped.indexOf(gone.n) < 0) skipped.push(gone.n);
   current = null;
-  renderSide();
-  draw();
-  fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "winner", pin: pin, n: gone.n, skip: true }) })
-    .then(function (r) { return r.json(); })
-    .then(function (res) { if (!res.ok) throw new Error(res.error); })
-    .catch(function () { toast("Redraw shown, but not saved online. Check the connection."); });
-});
-
-function unlock(p) {
-  pin = p;
-  return load().then(function () {
-    store("sc-pin", pin);
-    $("lock").hidden = true; $("stage").hidden = false;
-    // pick up late bookings between draws
-    setInterval(function () { if (!rolling) load().catch(function () {}); }, 30000);
-  });
+  addLog({ at: new Date(), skip: true, no: raffleNo(gone.n), name: gone.name });
+  render(); draw();
+  post({ action: "winner", n: gone.n, skip: true }).catch(function () { toast("Redraw shown, but not saved online."); });
 }
-$("pin-form").addEventListener("submit", function (e) {
-  e.preventDefault();
-  $("pin-err").textContent = "Checking…";
-  unlock($("pin").value.trim())
-    .then(function () { $("pin-err").textContent = ""; })
-    .catch(function (e2) { $("pin-err").textContent = e2.message || "Wrong PIN"; store("sc-pin"); });
+
+function reset() {
+  if (busy) return;
+  if (!confirm("Reset the draw? All winners go back into the draw and you start again from winner 1.")) return;
+  post({ action: "winner", reset: true }).then(function () {
+    winners = []; skipped = []; current = null; $("redraw").hidden = true;
+    document.body.classList.remove("won");
+    reels.forEach(function (r) { r.el.classList.remove("locked"); });
+    $("who").className = "who"; $("who").innerHTML = "<p class='hint'>Press <kbd>Space</kbd> or <b>Draw</b> to pick a winner</p>";
+    addLog({ at: new Date(), reset: true });
+    render(); toast("Draw reset");
+  }).catch(function (e) { toast("Didn't reset: " + (e.message || "try again")); });
+}
+
+// ================================================================ draw log
+var LOG_KEY = DEMO ? "sc-drawlog-demo" : "sc-drawlog";
+function getLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); } catch (e) { return []; } }
+function addLog(e) { var l = getLog(); l.unshift(e); try { localStorage.setItem(LOG_KEY, JSON.stringify(l.slice(0, 50))); } catch (x) {} paintLog(); }
+function paintLog() {
+  var rows = getLog().map(function (e) {
+    var when = new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Dubai" });
+    if (e.reset) return "<div class='row'>" + when + " · <b>Draw reset</b></div>";
+    if (e.skip) return "<div class='row'>" + when + " · <b>" + e.no + "</b> skipped (not present) · " + esc(e.name) + "</div>";
+    return "<div class='row'>" + when + " · <b>" + e.no + "</b> " + esc(e.name) + "<br>from " + e.pool + " entries" +
+      (e.filter && e.filter !== "all" ? " (" + (e.filter === "0" ? "no slot" : "slot " + e.filter) + ")" : "") +
+      " · pick #" + (e.idx + 1) + "<br><code>entry list SHA-256 " + e.fp + " · random " + e.raw + "</code></div>";
+  }).join("");
+  $("log-rows").innerHTML = rows || "<div class='row'>No draws yet.</div>";
+}
+function esc(s) { var d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+// ================================================================ sound (generated, no files)
+var ac = null;
+function audioInit() { if (!ac && soundOn) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (ac && ac.state === "suspended") ac.resume(); }
+function tone(freq, dur, type, vol, when) {
+  if (!ac || !soundOn) return;
+  var t = ac.currentTime + (when || 0), o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+var lastTick = 0;
+function tick(v) { var n = performance.now(); if (n - lastTick < 45) return; lastTick = n; tone(1700, 0.03, "square", 0.03 * v + 0.012); }
+function thunk() { tone(110, 0.28, "sine", 0.45); tone(220, 0.12, "triangle", 0.12); }
+function chime() { [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { tone(f, 0.9, "triangle", 0.16, i * 0.11); }); tone(1567.98, 1.4, "sine", 0.06, 0.46); }
+function paintSound() {
+  $("snd-wave").style.display = soundOn ? "" : "none";
+  $("sound").setAttribute("aria-label", soundOn ? "Sound on" : "Sound off");
+  $("sound").style.color = soundOn ? "var(--cyan)" : "";
+}
+
+// ================================================================ confetti
+function confetti() {
+  var cv = $("confetti"), g = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var colors = ["#0dc0df", "#86e3f4", "#019298", "#f5f5f5", "#d9d9d9", "#ffd666"], parts = [];
+  for (var i = 0; i < 260; i++) {
+    var fromLeft = i % 2 === 0;
+    parts.push({ x: fromLeft ? -10 : innerWidth + 10, y: innerHeight * (0.55 + Math.random() * 0.3),
+      vx: (fromLeft ? 1 : -1) * (6 + Math.random() * 10), vy: -(9 + Math.random() * 12),
+      w: 6 + Math.random() * 8, h: 10 + Math.random() * 12, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+      c: colors[i % colors.length] });
+  }
+  var t0 = performance.now();
+  (function frame(t) {
+    var age = (t - t0) / 1000;
+    g.clearRect(0, 0, innerWidth, innerHeight);
+    parts.forEach(function (p) {
+      p.vy += 0.32; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.globalAlpha = Math.max(0, 1 - Math.max(0, age - 2.6) / 1.4);
+      g.fillStyle = p.c; g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)));
+      g.restore();
+    });
+    if (age < 4) requestAnimationFrame(frame); else g.clearRect(0, 0, innerWidth, innerHeight);
+  })(t0);
+}
+
+// ================================================================ controls
+$("draw").addEventListener("click", draw);
+$("redraw").addEventListener("click", redraw);
+$("reset").addEventListener("click", reset);
+$("filter").addEventListener("change", render);
+$("sound").addEventListener("click", function () { soundOn = !soundOn; if (soundOn) audioInit(); paintSound(); });
+$("logbtn").addEventListener("click", function () { $("log").hidden = !$("log").hidden; paintLog(); });
+document.addEventListener("keydown", function (e) {
+  if ($("stage").hidden || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); draw(); }
+  else if (e.key === "m" || e.key === "M") $("sound").click();
+  else if (e.key === "l" || e.key === "L") $("logbtn").click();
+  else if (e.key === "f" || e.key === "F") {
+    if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+    else document.exitFullscreen();
+  }
 });
-var saved = recall("sc-pin");
-if (saved) unlock(saved).catch(function () { store("sc-pin"); });
+window.addEventListener("resize", function () { reels.forEach(paintReel); });
+
+function start() {
+  $("lock").hidden = true; $("stage").hidden = false;
+  paintSound(); paintLog(); render();
+  reels.forEach(paintReel); // reel height is only known once the stage is visible
+  if (!DEMO) setInterval(function () { if (!busy) load().catch(function () {}); }, 30000);
+}
+
+if (DEMO) {
+  regs = demoGuests();
+  $("demo-tag").hidden = false;
+  document.title = "Soundcheck · Raffle draw (demo)";
+  start();
+} else {
+  $("pin-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("pin-err").textContent = "Checking…";
+    pin = $("pin").value.trim();
+    load().then(function () { store("sc-pin", pin); $("pin-err").textContent = ""; start(); })
+      .catch(function (e2) { $("pin-err").textContent = e2.message || "Wrong PIN"; store("sc-pin"); });
+  });
+  var saved = recall("sc-pin");
+  if (saved) { pin = saved; load().then(start).catch(function () { store("sc-pin"); }); }
+}
 </script>
 </body>
 </html>
