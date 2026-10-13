@@ -185,7 +185,7 @@
 
       <button class="btn btn-primary" id="submit" type="submit">Register</button>
       <p class="form-err" id="form-err" role="alert" hidden></p>
-      <p class="consent">Every guest gets one Guest Pass. We use your details only to manage your registration for this event.</p>
+      <p class="consent">Every guest gets one raffle number. We use your details only to manage your registration for this event.</p>
     </form>
   </section>
 
@@ -196,7 +196,7 @@
       <h2 id="done-title">See you there</h2>
     </div>
     <div class="ticket" id="ticket">
-      <div class="t-label">Guest Pass</div>
+      <div class="t-label">Raffle number</div>
       <div class="t-no" id="t-no">SC-000</div>
       <div class="t-slot" id="t-slot">Slot 1</div>
       <div class="t-cut"></div>
@@ -204,7 +204,7 @@
       <div class="t-co" id="t-co"></div>
       <div class="t-event">Soundcheck 2026 · Wharfedale Pro Week Dubai</div>
     </div>
-    <p class="note" id="note">Keep your <b>pass number</b> handy tonight.</p>
+    <p class="note" id="note">Keep your <b>raffle number</b> for the on-stage draw.</p>
     <div class="actions">
       <button class="btn btn-primary" id="save" type="button">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
@@ -257,9 +257,9 @@ function applySlots(list, open) {
     return;
   }
   $("closed").hidden = true; form.hidden = false;
-  // every slot full: guests can still register
+  // every slot full: guests can still register for the raffle
   $("want-yes").disabled = !avail.length;
-  if (!avail.length && wantSlot() === "yes") { $("want-no").checked = true; onWant(); setMsg("want", "All slots are now full. You can still register for your Guest Pass."); }
+  if (!avail.length && wantSlot() === "yes") { $("want-no").checked = true; onWant(); setMsg("want", "All slots are now full. You can still register for the raffle."); }
 
   sel.options[0].textContent = "Select an available slot";
   var keep = sel.value;
@@ -331,7 +331,7 @@ function onWant() {
   if (!busy) btn.textContent = buttonLabel();
   $("form-err").hidden = true;
 }
-function buttonLabel() { return wantSlot() === "yes" ? "Book my slot" : wantSlot() === "no" ? "Get my Guest Pass" : "Register"; }
+function buttonLabel() { return wantSlot() === "yes" ? "Book my slot" : wantSlot() === "no" ? "Get my raffle number" : "Register"; }
 document.querySelectorAll('input[name="want"]').forEach(function (r) { r.addEventListener("change", onWant); });
 
 // ---------------------------------------------------------------- booking
@@ -385,10 +385,10 @@ function showTicket(t, existing) {
   save("sc-ticket", t);
   setBusy(false);
   $("t-no").textContent = t.no;
-  $("t-slot").textContent = t.slot ? "Slot " + t.slot : "Guest Pass";
+  $("t-slot").textContent = t.slot ? "Slot " + t.slot : "Raffle entry";
   $("note").innerHTML = t.slot
-    ? "Show this at the Immersive Audio Experience. Keep your <b>pass number</b> handy tonight."
-    : "Keep your <b>pass number</b> handy tonight.";
+    ? "Show this at the Immersive Audio Experience. Keep your <b>raffle number</b> for the on-stage draw."
+    : "Keep your <b>raffle number</b> for the on-stage draw.";
   $("t-name").textContent = t.name;
   $("t-co").textContent = t.company;
   $("done-eyebrow").textContent = existing ? "You're already registered" : t.slot ? "You're booked" : "You're registered";
@@ -431,10 +431,10 @@ function ticketImage() {
   g.fillStyle = "#0b0b0b";
   g.beginPath(); g.arc(x, y + 520, 34, 0, Math.PI * 2); g.arc(x + w, y + 520, 34, 0, Math.PI * 2); g.fill();
   g.fillStyle = "#0789a6"; g.font = "800 30px Manrope, sans-serif";
-  spaced(g, "GUEST PASS", W / 2, y + 110, 7);
+  spaced(g, "RAFFLE NUMBER", W / 2, y + 110, 7);
   g.fillStyle = "#0d0d0d"; g.font = "900 " + fit(g, ticket.no, "Poppins, Manrope, sans-serif", 180, w - 100, "900 ") + "px Poppins, Manrope, sans-serif";
   g.fillText(ticket.no, W / 2, y + 300);
-  var pill = ticket.slot ? "SLOT " + ticket.slot : "GUEST PASS", pw = ticket.slot ? 260 : 380;
+  var pill = ticket.slot ? "SLOT " + ticket.slot : "RAFFLE ENTRY", pw = ticket.slot ? 260 : 380;
   g.fillStyle = "#0d0d0d"; round(g, W / 2 - pw / 2, y + 360, pw, 70, 35); g.fill();
   g.fillStyle = "#0dc0df"; g.font = "800 32px Manrope, sans-serif";
   spaced(g, pill, W / 2, y + 407, 5);
@@ -445,7 +445,7 @@ function ticketImage() {
   g.fillStyle = "#555555"; g.font = "700 " + fit(g, ticket.company.toUpperCase(), "Manrope, sans-serif", 32, w - 120, "700 ") + "px Manrope, sans-serif";
   spaced(g, ticket.company.toUpperCase(), W / 2, y + 705, 3);
   g.fillStyle = "#808080"; g.font = "600 26px Manrope, sans-serif";
-  g.fillText("Keep your pass number handy tonight", W / 2, y + 770);
+  g.fillText("Keep this number for the on-stage raffle draw", W / 2, y + 770);
   g.fillStyle = "#808080"; g.font = "700 24px Manrope, sans-serif";
   spaced(g, "HOSTED BY TECHNILINE", W / 2, H - 70, 6);
   return c;

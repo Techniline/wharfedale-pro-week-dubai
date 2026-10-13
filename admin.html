@@ -379,7 +379,7 @@ document.querySelectorAll(".tabs button").forEach(function (b) {
 // --- Bookings ---------------------------------------------------------------
 var view = "photos", regs = [], regSlots = [], winners = [];
 var DOT = String.fromCharCode(183);
-function passNo(n) { return "SC-" + ("00" + n).slice(-3); }
+function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
 
 function loadRegs() {
   return fetch(UPLOAD_URL + "?action=regs&pin=" + encodeURIComponent(pin) + "&t=" + Date.now())
@@ -401,7 +401,7 @@ function renderRegs() {
     var cap = s.cap || 0, open = s.left === null || s.left === undefined, d = document.createElement("div");
     d.className = "slot" + (!open && s.left <= 0 ? " full" : "");
     d.innerHTML = "<small></small><b></b><div class='bar'><i></i></div>";
-    d.querySelector("small").textContent = !s.n ? "No slot" : "Slot " + s.n + " " + DOT + (open ? " Open" : s.left <= 0 ? " Full" : " " + s.left + " left");
+    d.querySelector("small").textContent = !s.n ? "Raffle only" : "Slot " + s.n + " " + DOT + (open ? " Open" : s.left <= 0 ? " Full" : " " + s.left + " left");
     d.querySelector("b").innerHTML = s.taken + (open ? " <span>booked</span>" : " <span>/ " + cap + "</span>");
     d.querySelector("i").style.width = open ? "100%" : Math.round(100 * s.taken / Math.max(1, cap)) + "%";
     if (open) d.querySelector("i").style.opacity = "0.25";
@@ -411,7 +411,7 @@ function renderRegs() {
   var q = document.getElementById("q").value.trim().toLowerCase();
   var list = regs.filter(function (r) {
     if (!q) return true;
-    return [passNo(r.n), r.name, r.co, r.em, r.ph, r.s ? "slot " + r.s : "no slot"].join(" ").toLowerCase().indexOf(q) >= 0;
+    return [raffleNo(r.n), r.name, r.co, r.em, r.ph, r.s ? "slot " + r.s : "raffle only"].join(" ").toLowerCase().indexOf(q) >= 0;
   });
   var box = document.getElementById("regs");
   box.innerHTML = "";
@@ -419,18 +419,18 @@ function renderRegs() {
     var row = document.createElement("div");
     row.className = "reg";
     row.innerHTML = "<div class='no'></div><div class='who'><b></b><span></span></div><div class='side'><span class='slot-tag'></span></div><div class='contact'><a class='em'></a> " + DOT + " <a class='ph'></a></div>";
-    row.querySelector(".no").textContent = passNo(r.n);
+    row.querySelector(".no").textContent = raffleNo(r.n);
     row.querySelector(".who b").textContent = r.name;
     row.querySelector(".who span").textContent = r.co;
-    row.querySelector(".slot-tag").textContent = r.s ? "Slot " + r.s : "No slot";
+    row.querySelector(".slot-tag").textContent = r.s ? "Slot " + r.s : "Raffle only";
     var em = row.querySelector(".em"); em.textContent = r.em; em.href = "mailto:" + r.em;
     var ph = row.querySelector(".ph"); ph.textContent = r.ph; ph.href = "tel:" + r.ph;
     var side = row.querySelector(".side");
     if (winners.indexOf(r.n) >= 0) {
-      var w = document.createElement("span"); w.className = "won"; w.textContent = "Winner"; side.appendChild(w);
+      var w = document.createElement("span"); w.className = "won"; w.textContent = "Raffle winner"; side.appendChild(w);
     }
     var x = btn("x", "", function () { cancelReg(r); });
-    x.setAttribute("aria-label", "Cancel booking " + passNo(r.n)); x.title = "Cancel booking";
+    x.setAttribute("aria-label", "Cancel booking " + raffleNo(r.n)); x.title = "Cancel booking";
     x.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     side.appendChild(x);
     box.appendChild(row);
@@ -442,7 +442,7 @@ function renderRegs() {
 document.getElementById("q").addEventListener("input", renderRegs);
 
 function cancelReg(r) {
-  if (!confirm("Cancel booking " + passNo(r.n) + " for " + r.name + "?" + (r.s ? " Their seat in Slot " + r.s + " opens up again." : "") + " The number " + passNo(r.n) + " won't be given to anyone else.")) return;
+  if (!confirm("Cancel booking " + raffleNo(r.n) + " for " + r.name + "?" + (r.s ? " Their seat in Slot " + r.s + " opens up again." : "") + " The number " + raffleNo(r.n) + " won't be given to anyone else.")) return;
   regs.splice(regs.indexOf(r), 1);
   regSlots.forEach(function (s) { if (s.n === r.s) { s.taken--; if (s.left !== null) s.left++; } });
   renderRegs();
@@ -481,9 +481,9 @@ function csvCell(v) {
   return '"' + v.replace(/"/g, '""') + '"';
 }
 document.getElementById("csv").addEventListener("click", function () {
-  var rows = [["Pass no", "Slot", "Name", "Company", "Email", "Phone", "Booked at (Dubai)", "Winner"]];
+  var rows = [["Raffle no", "Slot", "Name", "Company", "Email", "Phone", "Booked at (Dubai)", "Raffle winner"]];
   regs.forEach(function (r) {
-    rows.push([passNo(r.n), r.s ? "Slot " + r.s : "No slot", r.name, r.co, r.em, r.ph,
+    rows.push([raffleNo(r.n), r.s ? "Slot " + r.s : "Raffle only", r.name, r.co, r.em, r.ph,
       new Date(r.t).toLocaleString("en-GB", { timeZone: "Asia/Dubai" }), winners.indexOf(r.n) >= 0 ? "Yes" : ""]);
   });
   var csv = rows.map(function (row) { return row.map(csvCell).join(","); }).join("\r\n");
@@ -502,7 +502,7 @@ function showView(v) {
   document.getElementById("reg-main").hidden = v !== "regs";
   var link = document.getElementById("top-link");
   link.href = v === "regs" ? "draw.html" : "live.html";
-  link.textContent = v === "regs" ? "Stage draw ↗" : "Open big screen ↗";
+  link.textContent = v === "regs" ? "Raffle draw ↗" : "Open big screen ↗";
   store("sc-view", v);
   if (v === "regs") loadRegs().catch(function (e) { toast(e.message || "Couldn't load bookings"); });
 }

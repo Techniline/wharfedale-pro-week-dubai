@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b0b0b">
-<title>Soundcheck · Stage screen</title>
+<title>Soundcheck · Raffle draw</title>
 <link rel="icon" type="image/png" href="assets/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,7 +73,7 @@
 <section class="lock" id="lock">
   <form id="pin-form" autocomplete="off">
     <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
-    <h1>Stage screen</h1>
+    <h1>Raffle draw</h1>
     <p>Enter the team PIN to start the draw.</p>
     <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" aria-label="PIN" required>
     <button class="btn btn-primary" type="submit" style="width:100%;margin-top:12px">Unlock</button>
@@ -87,7 +87,7 @@
     <div class="host">Hosted by <img class="tl" src="assets/techniline.png" alt="Techniline"></div>
   </div>
   <div class="center">
-    <div class="eyebrow" id="eyebrow">Soundcheck · On stage</div>
+    <div class="eyebrow" id="eyebrow">Soundcheck · On-stage raffle</div>
     <h1 class="title">And the winner <em>is</em></h1>
     <div class="num" id="num">SC-···</div>
     <div class="who" id="who"><p class="hint">Press <b>Space</b> or <b>Draw</b> to pick a winner</p></div>
@@ -109,7 +109,7 @@ var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9N
 var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, rolling = false;
 var ORD = ["1st", "2nd", "3rd"];
 var $ = function (id) { return document.getElementById(id); };
-function passNo(n) { return "SC-" + ("00" + n).slice(-3); }
+function raffleNo(n) { return "SC-" + ("00" + n).slice(-3); }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3000); }
 function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
 function recall(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
@@ -135,7 +135,7 @@ function renderSide() {
   var box = $("winners"); box.innerHTML = "";
   winners.forEach(function (n, i) {
     var r = byNo(n), s = document.createElement("span");
-    s.textContent = (ORD[i] || (i + 1) + "th") + "  " + passNo(n) + (r ? "  " + String.fromCharCode(183) + "  " + r.name : "");
+    s.textContent = (ORD[i] || (i + 1) + "th") + "  " + raffleNo(n) + (r ? "  " + String.fromCharCode(183) + "  " + r.name : "");
     box.appendChild(s);
   });
   var left = pool().length, done = winners.length >= maxWinners;
@@ -170,9 +170,9 @@ function draw() {
   (function tick(now) {
     var p = Math.min(1, (now - start) / total);
     var gap = 40 + 360 * p * p * p; // slows down towards the end
-    if (now - last >= gap) { num.textContent = passNo(pick(list).n); last = now; }
+    if (now - last >= gap) { num.textContent = raffleNo(pick(list).n); last = now; }
     if (p < 1) { requestAnimationFrame(tick); return; }
-    num.textContent = passNo(winner.n);
+    num.textContent = raffleNo(winner.n);
     num.classList.remove("rolling");
     document.body.classList.add("won");
     who.innerHTML = "<b></b><span></span>";
@@ -215,7 +215,7 @@ $("reset").addEventListener("click", function () {
 $("redraw").addEventListener("click", function () {
   if (!current || rolling) return;
   var gone = current;
-  if (!confirm("Redraw? " + passNo(gone.n) + " (" + gone.name + ") is removed from the winners and can't be drawn again.")) return;
+  if (!confirm("Redraw? " + raffleNo(gone.n) + " (" + gone.name + ") is removed from the winners and can't be drawn again.")) return;
   winners = winners.filter(function (n) { return n !== gone.n; });
   if (skipped.indexOf(gone.n) < 0) skipped.push(gone.n);
   current = null;
