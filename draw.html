@@ -186,6 +186,8 @@ var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, busy = false, soundOn = true, digits = 3;
 var ORD = ["1st", "2nd", "3rd", "4th", "5th"];
+// Draw pacing (ms): about 15 seconds from Draw to the winner's name
+var PACE = { shuffle: 4200, digit: 1900, gap: 900, last: 5200, lastTurns: 5 };
 
 function raffleNo(n) { var s = String(n); while (s.length < digits) s = "0" + s; return "SC-" + s; }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3200); }
@@ -347,9 +349,9 @@ function spinAll() {
   reels.forEach(function (r, i) { r.state = "spin"; r.vel = 26 + i * 4; r.el.classList.remove("locked"); r.el.classList.add("fast"); });
   lastT = 0; requestAnimationFrame(loop);
 }
-function stopReel(r, digit, dur) {
+function stopReel(r, digit, dur, turns) {
   return new Promise(function (done) {
-    var base = Math.ceil(r.pos / 10) * 10 + 20; // at least two more full turns before landing
+    var base = Math.ceil(r.pos / 10) * 10 + 10 * (turns || 2); // full turns before landing
     r.from = r.pos; r.to = base + digit; r.t0 = performance.now(); r.dur = dur; r.state = "stop"; r.done = done;
   });
 }
@@ -374,13 +376,17 @@ function draw() {
   $("eyebrow").textContent = "Shuffling " + list.length + " entries";
   rowBoost = 7;
   spinAll();
-  var seq = wait(1700);
+  setTimeout(function () { if (busy) $("eyebrow").textContent = "Mixing the numbers"; }, PACE.shuffle * 0.4);
+  setTimeout(function () { if (busy) $("eyebrow").textContent = "Here we go"; }, PACE.shuffle * 0.78);
+  var seq = wait(PACE.shuffle);
   reels.forEach(function (r, i) {
     var isLast = i === reels.length - 1;
     seq = seq.then(function () {
-      if (isLast) $("eyebrow").textContent = "And the last digit is";
-      return stopReel(r, Number(target[i]), isLast ? 2300 : 1050);
-    }).then(function () { return wait(isLast ? 0 : 260); });
+      if (isLast) { $("eyebrow").textContent = "And the last digit is"; drumroll(PACE.last); }
+      else if (i === 0) $("eyebrow").textContent = "First digit";
+      else $("eyebrow").textContent = "Next digit";
+      return stopReel(r, Number(target[i]), isLast ? PACE.last : PACE.digit, isLast ? PACE.lastTurns : 3);
+    }).then(function () { return wait(isLast ? 350 : PACE.gap); });
   });
   seq.then(function () {
     rowBoost = 1;
@@ -454,6 +460,14 @@ function tone(freq, dur, type, vol, when) {
 }
 var lastTick = 0;
 function tick(v) { var n = performance.now(); if (n - lastTick < 45) return; lastTick = n; tone(1700, 0.03, "square", 0.03 * v + 0.012); }
+function drumroll(ms) {
+  if (!ac || !soundOn) return;
+  var t = 0, gap = 0.16;
+  while (t < ms / 1000 - 0.05) {
+    tone(70 + Math.random() * 8, 0.09, "triangle", 0.10 + 0.25 * (t / (ms / 1000)), t);
+    t += gap; gap = Math.max(0.045, gap * 0.95);
+  }
+}
 function thunk() { tone(110, 0.28, "sine", 0.45); tone(220, 0.12, "triangle", 0.12); }
 function chime() { [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { tone(f, 0.9, "triangle", 0.16, i * 0.11); }); tone(1567.98, 1.4, "sine", 0.06, 0.46); }
 function paintSound() {
