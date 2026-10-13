@@ -454,6 +454,61 @@
   footer .fname { font-weight: 800; }
   footer .fname .sc-word { font-size: 1.1em; }
   footer .fname em { font-weight: 700; background: none; color: #019298; -webkit-text-fill-color: #019298; }
+  /* ---------- Register section ---------- */
+  .reg-section { padding-top: 40px; }
+  .reg-panel {
+    position: relative; display: grid; gap: 34px; align-items: center; overflow: hidden;
+    padding: 34px 22px; border-radius: 28px; border: 1px solid rgba(13,192,223,0.35);
+    background: radial-gradient(90% 120% at 100% 0%, rgba(13,192,223,0.16), transparent 55%), linear-gradient(160deg, rgba(20,20,20,0.96), rgba(8,8,8,0.96));
+    box-shadow: 0 40px 90px -50px rgba(13,192,223,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .reg-panel::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, #0dc0df 30%, #019298 70%, transparent); }
+  @media (min-width: 900px) { .reg-panel { grid-template-columns: 1.25fr 0.75fr; padding: 54px 56px; gap: 48px; } }
+  .reg-main h2 { font-size: clamp(30px, 6.4vw, 48px); line-height: 1.05; }
+  .reg-word { color: #0dc0df; text-transform: uppercase; font-weight: 900; }
+  .reg-lead { color: var(--ink-dim); font-size: 16.5px; margin: 16px 0 26px; max-width: 46ch; }
+  .reg-lead b { color: var(--ink); }
+  .reg-steps { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 10px; }
+  @media (min-width: 640px) and (max-width: 899px) { .reg-steps { grid-template-columns: repeat(3, 1fr); } }
+  .reg-steps li { display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--hairline-strong); }
+  .reg-i { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #0dc0df; color: #04161b; font: 900 15px 'Poppins', sans-serif; }
+  .reg-steps b { display: block; font-size: 14.5px; line-height: 1.25; }
+  .reg-steps b em { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #019298; margin-left: 4px; }
+  .reg-steps small { display: block; font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; }
+  .reg-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px; margin-bottom: 28px; }
+  @media (min-width: 640px) { .reg-slots { grid-template-columns: repeat(4, 1fr); } }
+  .reg-slot span { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+  .reg-slot i { display: block; height: 5px; border-radius: 5px; background: #262626; overflow: hidden; margin: 7px 0 6px; }
+  .reg-slot u { display: block; height: 100%; width: 0; background: #0dc0df; border-radius: 5px; transition: width .8s var(--ease); }
+  .reg-slot.open u { width: 100%; background: linear-gradient(90deg, #019298, #0dc0df); opacity: 0.45; }
+  .reg-slot em { font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--ink-faint); }
+  .reg-slot.low em { color: #0dc0df; }
+  .reg-slot.full span, .reg-slot.full em { color: #555; }
+  .reg-cta { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .reg-cta .btn { width: auto; padding: 18px 38px; font-size: 16px; }
+  .reg-cta .btn svg { transition: transform .3s var(--ease); }
+  .reg-cta .btn:hover svg { transform: translateX(4px); }
+  .reg-cta small { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink-faint); }
+  @media (max-width: 639px) { .reg-cta { align-items: stretch; text-align: center; } .reg-cta .btn { width: 100%; } }
+  .reg-art { display: flex; justify-content: center; }
+  @media (max-width: 899px) { .reg-art { display: none; } }
+  .reg-ticket {
+    position: relative; width: 100%; max-width: 300px; padding: 26px 22px 22px; border-radius: 22px; text-align: center;
+    background: #f7f7f7; color: #0d0d0d; transform: rotate(-4deg);
+    box-shadow: 0 40px 80px -30px rgba(13,192,223,0.55), 0 0 0 1px rgba(255,255,255,0.4) inset;
+    animation: tfloat 6s ease-in-out infinite;
+  }
+  @keyframes tfloat { 50% { transform: rotate(-3deg) translateY(-8px); } }
+  .reg-ticket::before, .reg-ticket::after { content: ""; position: absolute; top: 61%; width: 24px; height: 24px; border-radius: 50%; background: #0e0e0e; transform: translateY(-50%); }
+  .reg-ticket::before { left: -12px; } .reg-ticket::after { right: -12px; }
+  .reg-ticket span { display: block; }
+  .rt-label { font-size: 10.5px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #0789a6; }
+  .rt-no { font: 900 52px/1 'Poppins', sans-serif; margin: 10px 0 12px; }
+  .rt-pill { display: inline-block !important; padding: 6px 14px; border-radius: 999px; background: #0d0d0d; color: #0dc0df; font-size: 11.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+  .rt-cut { border-top: 2px dashed #cfcfcf; margin: 20px -4px 16px; }
+  .rt-name { font: 700 20px 'Poppins', sans-serif; }
+  .rt-co { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #555; margin-top: 3px; }
+  .rt-ev { font-size: 10.5px; color: #808080; margin-top: 12px; }
 </style>
 <script>document.documentElement.classList.add('js');</script>
 </head>
@@ -470,16 +525,55 @@
     <img class="hero-logo reveal" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro" width="667" height="540">
     <h1 class="sc-lockup reveal d1"><span class="sc-welcome">Welcome to</span><span class="sc-word">Soundcheck</span><span class="sc-year">2026</span><span class="sc-sub">Wharfedale Pro Week · Dubai</span></h1>
     <p class="tagline reveal d2">An intimate, invitation only evening with the Wharfedale Pro team, because some conversations are better had in person, over good food, with people who matter.</p>
-    <div class="hero-cta reveal d3"><a class="btn btn-primary" href="register.html">Book your slot</a><small>Every guest gets a raffle number</small></div>
+    <div class="hero-cta reveal d3"><a class="btn btn-primary" href="register.html">Register now</a><small>Every guest gets a raffle number</small></div>
   </div>
   <div class="hero-waves" aria-hidden="true"><svg viewBox="0 0 1000 120" preserveAspectRatio="none" id="hero-waves"></svg></div>
   <a class="scroll-cue" href="#highlights">Scroll</a>
 </section>
 
+<section class="section reg-section" id="register">
+  <div class="wrap-wide">
+    <div class="reg-panel reveal">
+      <div class="reg-main">
+        <p class="eyebrow-label"><span class="n">01</span>Register</p>
+        <h2>Register for <span class="reg-word">Soundcheck</span></h2>
+        <p class="reg-lead">Every guest gets a <b>raffle number</b> for the on-stage draw. Want the Immersive Audio Experience? Book your slot while you register.</p>
+        <ol class="reg-steps">
+          <li><span class="reg-i">1</span><div><b>Your details</b><small>Name, company, email and phone</small></div></li>
+          <li><span class="reg-i">2</span><div><b>Book a slot <em>optional</em></b><small>Immersive Audio Experience</small></div></li>
+          <li><span class="reg-i">3</span><div><b>Get your raffle number</b><small>Keep it for the on-stage draw</small></div></li>
+        </ol>
+        <div class="reg-slots" id="reg-slots" aria-live="polite">
+          <div class="reg-slot" data-n="1"><span>Slot 1</span><i><u></u></i><em>35 seats</em></div>
+          <div class="reg-slot" data-n="2"><span>Slot 2</span><i><u></u></i><em>35 seats</em></div>
+          <div class="reg-slot" data-n="3"><span>Slot 3</span><i><u></u></i><em>35 seats</em></div>
+          <div class="reg-slot open" data-n="4"><span>Slot 4</span><i><u></u></i><em>Open</em></div>
+        </div>
+        <div class="reg-cta">
+          <a class="btn btn-primary" href="register.html">Register now
+            <svg width="16" height="12" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M8.5 1.5 12 5l-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.8"/></svg></a>
+          <small>Takes under a minute · one raffle number per guest</small>
+        </div>
+      </div>
+      <div class="reg-art" aria-hidden="true">
+        <div class="reg-ticket">
+          <span class="rt-label">Raffle number</span>
+          <span class="rt-no">SC-&middot;&middot;&middot;</span>
+          <span class="rt-pill">Your slot</span>
+          <span class="rt-cut"></span>
+          <span class="rt-name">Your name</span>
+          <span class="rt-co">Your company</span>
+          <span class="rt-ev">Soundcheck 2026 &middot; Wharfedale Pro Week Dubai</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="highlights">
   <div class="wrap-wide">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">01</span>Tonight</p>
+      <p class="eyebrow-label"><span class="n">02</span>Tonight</p>
       <h2>What's on <em>tonight</em></h2>
       <p>Tap a card to see what it's about.</p>
     </div>
@@ -527,7 +621,7 @@
 <section class="section alt" id="itinerary">
   <div class="wrap-wide">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">02</span>Run of the evening</p>
+      <p class="eyebrow-label"><span class="n">03</span>Run of the evening</p>
       <h2>How the evening <em>unfolds</em></h2>
     </div>
   </div>
@@ -568,7 +662,7 @@
 <section class="section" id="products">
   <div class="wrap-wide">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">03</span>On display tonight</p>
+      <p class="eyebrow-label"><span class="n">04</span>On display tonight</p>
       <h2>The range you'll <em>hear</em> tonight</h2>
     </div>
     <div class="products">
@@ -598,7 +692,7 @@
 <section class="section alt" id="capture">
   <div class="wrap">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">04</span>Capture the moment</p>
+      <p class="eyebrow-label"><span class="n">05</span>Capture the moment</p>
       <h2>Share your photos from <em>tonight</em></h2>
       <p>Snap it and send it to tonight's album. No sign-in, no app.</p>
     </div>
@@ -643,7 +737,7 @@
 <section class="section" id="album">
   <div class="wrap-wide">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">05</span>Tonight's album</p>
+      <p class="eyebrow-label"><span class="n">06</span>Tonight's album</p>
       <h2>Moments from <em>tonight</em></h2>
       <p>Photos from guests, added through the evening. Tap any photo to see it full size.</p>
     </div>
@@ -658,7 +752,7 @@
 <section class="section" id="connect">
   <div class="wrap">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">06</span>Get in touch</p>
+      <p class="eyebrow-label"><span class="n">07</span>Get in touch</p>
       <h2>Want to talk <em>product?</em></h2>
       <p>Book a demo with our team, or tell us what you thought of tonight. Both open a short form and hand off to WhatsApp so we get it straight away.</p>
     </div>
@@ -695,7 +789,7 @@
 <section class="section alt" id="follow">
   <div class="wrap-wide">
     <div class="section-head reveal">
-      <p class="eyebrow-label"><span class="n">07</span>Stay in touch</p>
+      <p class="eyebrow-label"><span class="n">08</span>Stay in touch</p>
       <h2>Follow <em>along</em></h2>
     </div>
     <div class="follow-groups">
@@ -1233,7 +1327,23 @@ function sendFeedback(e) {
     window.addEventListener('load', start);
   }
 })();
+// Live seat counts in the Register section (public counts only, no guest details)
+(function () {
+  var box = document.getElementById("reg-slots");
+  if (!box || !window.fetch) return;
+  var DOT = String.fromCharCode(183);
+  fetch(UPLOAD_URL + "?action=slots&t=" + Date.now()).then(function (r) { return r.json(); }).then(function (res) {
+    if (!res.ok || !res.slots) return;
+    res.slots.forEach(function (s) {
+      var el = box.querySelector('[data-n="' + s.n + '"]');
+      if (!el) return;
+      var open = s.left === null || s.left === undefined;
+      el.className = "reg-slot" + (open ? " open" : s.left <= 0 ? " full" : s.left <= 5 ? " low" : "");
+      el.querySelector("em").textContent = open ? "Open" : s.left <= 0 ? "Full" : s.left + (s.left === 1 ? " seat left" : " seats left");
+      if (!open) el.querySelector("u").style.width = Math.round(100 * s.taken / Math.max(1, s.cap)) + "%";
+    });
+  }).catch(function () {});
+})();
 </script>
-
 </body>
 </html>
