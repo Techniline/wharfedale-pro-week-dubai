@@ -190,9 +190,9 @@ var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var pin = "", regs = [], winners = [], skipped = [], maxWinners = 2, current = null, busy = false, soundOn = true, digits = 3;
 var ORD = ["1st", "2nd", "3rd", "4th", "5th"];
-// Draw pacing (ms): about 21 seconds from Draw to the winner's name.
+// Draw pacing (ms): about 30 seconds from Draw to the winner's name.
 // Each reel glides to a stop in one smooth, continuous slow-down.
-var PACE = { shuffle: 6000, gap: 1300, digit: 3000, digitTurns: 4, last: 6500, lastTurns: 6 };
+var PACE = { shuffle: 6000, gap: 1300, digit: 3000, digitTurns: 4, last: 9500, lastTurns: 10 };
 
 function raffleNo(n) { var s = String(n); while (s.length < digits) s = "0" + s; return "SC-" + s; }
 function toast(m) { var t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 3200); }
@@ -367,10 +367,12 @@ function draw() {
   reels.forEach(function (r, i) {
     var isLast = i === reels.length - 1;
     seq = seq.then(function () {
-      if (isLast) { $("eyebrow").textContent = "And the last digit is"; drumroll(PACE.last); }
+      if (isLast) $("eyebrow").textContent = "And the last digit is";
       else if (i === 0) $("eyebrow").textContent = "First digit";
       else $("eyebrow").textContent = "Next digit";
-      return stopReel(r, Number(target[i]), isLast ? PACE.last : PACE.digit, isLast ? PACE.lastTurns : PACE.digitTurns);
+      var stop = stopReel(r, Number(target[i]), isLast ? PACE.last : PACE.digit, isLast ? PACE.lastTurns : PACE.digitTurns);
+      if (isLast) drumroll(r.dur); // r.dur is the real slow-down length, so the roll ends as the digit locks
+      return stop;
     }).then(function () { return wait(isLast ? 350 : PACE.gap); });
   });
   seq.then(function () {
