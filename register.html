@@ -119,6 +119,20 @@
   .actions { display: grid; gap: 10px; }
   .link { display: block; margin: 16px auto 0; background: none; border: 0; color: var(--dim); font: 600 13px 'Manrope', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 8px; }
 
+  /* Save-your-ticket popup */
+  .save-pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); background: rgba(0,0,0,0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadeIn .25s ease; }
+  @media (min-width: 560px) { .save-pop { align-items: center; } }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .save-card { width: 100%; max-width: 420px; max-height: calc(100svh - 32px); overflow: auto; border-radius: 24px; padding: 22px 20px 18px; text-align: center; background: #121212 url("assets/grille.svg"); background-size: 34px 22px; border: 1px solid rgba(13,192,223,0.4); box-shadow: 0 30px 80px -20px rgba(13,192,223,0.45); animation: up .35s var(--ease); }
+  @keyframes up { from { transform: translateY(24px); opacity: 0; } }
+  .save-card .icon { width: 52px; height: 52px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; background: var(--teal); color: var(--on-teal); }
+  .save-card h3 { font: 800 22px/1.15 'Poppins', sans-serif; margin: 0 0 8px; }
+  .save-card p { color: var(--dim); font-size: 14.5px; line-height: 1.5; margin: 0 0 14px; }
+  .save-card p b { color: var(--ink); }
+  .save-card .preview { display: block; width: 62%; max-width: 230px; margin: 0 auto 14px; border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(0,0,0,0.8); -webkit-touch-callout: default; }
+  .save-card .tip { font-size: 12px; color: var(--faint); margin: 10px 4px 0; }
+  .save-card .later { display: block; margin: 8px auto 0; background: none; border: 0; color: var(--dim); font: 700 13px 'Manrope', sans-serif; padding: 10px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
   .foot { text-align: center; margin-top: 30px; color: var(--faint); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; }
   .foot img { height: 16px; width: auto; vertical-align: middle; margin-left: 6px; opacity: 0.85; }
   .foot a { color: inherit; text-decoration: none; }
@@ -204,16 +218,28 @@
       <div class="t-co" id="t-co"></div>
       <div class="t-event">Soundcheck 2026 · Wharfedale Pro Week Dubai</div>
     </div>
-    <p class="note" id="note">Keep your <b>raffle number</b> for the on-stage draw.</p>
+    <p class="note" id="note">Save this ticket to your phone. You'll need to <b>show it to claim your gift</b>.</p>
     <div class="actions">
       <button class="btn btn-primary" id="save" type="button">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-        Save my ticket
+        Save ticket to my phone
       </button>
       <a class="btn btn-ghost" href="./">Back to Soundcheck</a>
     </div>
     <button class="link" id="another" type="button">Check in another guest</button>
   </section>
+
+  <div class="save-pop" id="save-pop" role="dialog" aria-modal="true" aria-labelledby="save-title" hidden>
+    <div class="save-card">
+      <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
+      <h3 id="save-title">Save your raffle ticket</h3>
+      <p>Keep it on your phone. You'll need to <b>show this ticket to claim your gift</b>.</p>
+      <img class="preview" id="save-preview" alt="Your raffle ticket">
+      <button class="btn btn-primary" id="save-now" type="button">Save to my phone</button>
+      <p class="tip">Or press and hold the ticket above, then tap <b>Save</b> or <b>Add to Photos</b>.</p>
+      <button class="later" id="save-later" type="button">I've saved it</button>
+    </div>
+  </div>
 
   <footer class="foot"><a href="./">Hosted by <img src="assets/techniline.png" alt="Techniline" width="472" height="84"></a></footer>
 </div>
@@ -387,8 +413,8 @@ function showTicket(t, existing) {
   $("t-no").textContent = t.no;
   $("t-slot").textContent = t.slot ? "Slot " + t.slot : "Raffle entry";
   $("note").innerHTML = t.slot
-    ? "Show this at the Immersive Audio Experience. Keep your <b>raffle number</b> for the on-stage draw."
-    : "Keep your <b>raffle number</b> for the on-stage draw.";
+    ? "Show this at the Immersive Audio Experience. Save it to your phone: you'll need to <b>show this ticket to claim your gift</b>."
+    : "Save it to your phone: you'll need to <b>show this ticket to claim your gift</b>.";
   $("t-name").textContent = t.name;
   $("t-co").textContent = t.company;
   $("done-eyebrow").textContent = existing ? "You're already checked in" : "You're checked in";
@@ -396,6 +422,9 @@ function showTicket(t, existing) {
   $("form-card").hidden = true;
   $("done").hidden = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
+  prepareTicketFile().then(function () {
+    if (!wasSaved(t.no)) openSavePop();
+  });
 }
 
 $("another").addEventListener("click", function () {
@@ -445,7 +474,7 @@ function ticketImage() {
   g.fillStyle = "#555555"; g.font = "700 " + fit(g, ticket.company.toUpperCase(), "Manrope, sans-serif", 32, w - 120, "700 ") + "px Manrope, sans-serif";
   spaced(g, ticket.company.toUpperCase(), W / 2, y + 705, 3);
   g.fillStyle = "#808080"; g.font = "600 26px Manrope, sans-serif";
-  g.fillText("Keep this number for the on-stage raffle draw", W / 2, y + 770);
+  g.fillText("Show this ticket to claim your gift", W / 2, y + 770);
   g.fillStyle = "#808080"; g.font = "700 24px Manrope, sans-serif";
   spaced(g, "HOSTED BY TECHNILINE", W / 2, H - 70, 6);
   return c;
@@ -468,24 +497,47 @@ function spaced(g, text, cx, y, sp) {
   g.textAlign = align;
 }
 
-$("save").addEventListener("click", function () {
-  if (!ticket) return;
+// The ticket image is built ahead of time, so tapping Save opens the phone's
+// share sheet straight away (iPhones refuse it if the tap and the share are far apart).
+var ticketFile = null, ticketUrl = null, ticketFor = null;
+function prepareTicketFile() {
+  if (ticketFor === ticket.no && ticketUrl) return Promise.resolve();
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  ready.then(function () {
-    ticketImage().toBlob(function (blob) {
-      var name = "soundcheck-" + ticket.no.toLowerCase() + ".png";
-      var file = typeof File === "function" ? new File([blob], name, { type: "image/png" }) : null;
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: "My Soundcheck slot" }).catch(function () {});
-        return;
-      }
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = name;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    }, "image/png");
+  return ready.then(function () {
+    return new Promise(function (done) {
+      ticketImage().toBlob(function (blob) {
+        if (ticketUrl) URL.revokeObjectURL(ticketUrl);
+        var name = "soundcheck-raffle-" + ticket.no.toLowerCase() + ".png";
+        ticketFile = typeof File === "function" ? new File([blob], name, { type: "image/png" }) : null;
+        ticketUrl = URL.createObjectURL(blob);
+        ticketFor = ticket.no;
+        $("save-preview").src = ticketUrl;
+        done();
+      }, "image/png");
+    });
   });
-});
+}
+function saveTicket() {
+  if (!ticketUrl) { prepareTicketFile().then(saveTicket); return; }
+  if (ticketFile && navigator.canShare && navigator.canShare({ files: [ticketFile] })) {
+    navigator.share({ files: [ticketFile], title: "My Soundcheck raffle ticket" })
+      .then(function () { markSaved(); closeSavePop(); }).catch(function () {});
+    return;
+  }
+  var a = document.createElement("a");
+  a.href = ticketUrl; a.download = ticketFile ? ticketFile.name : "soundcheck-raffle-ticket.png";
+  document.body.appendChild(a); a.click(); a.remove();
+  markSaved();
+}
+function wasSaved(no) { return !!load("sc-saved-" + no); }
+function markSaved() { if (ticket) save("sc-saved-" + ticket.no, 1); }
+function openSavePop() { $("save-pop").hidden = false; $("save-now").focus(); }
+function closeSavePop() { $("save-pop").hidden = true; }
+$("save").addEventListener("click", function () { if (ticket) prepareTicketFile().then(openSavePop); });
+$("save-now").addEventListener("click", saveTicket);
+$("save-later").addEventListener("click", function () { markSaved(); closeSavePop(); });
+$("save-pop").addEventListener("click", function (e) { if (e.target === this) closeSavePop(); });
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSavePop(); });
 
 // ---------------------------------------------------------------- start
 function refresh() {

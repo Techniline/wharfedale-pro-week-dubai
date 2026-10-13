@@ -491,7 +491,12 @@
   .reg-cta small { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink-faint); }
   @media (max-width: 639px) { .reg-cta { align-items: stretch; text-align: center; } .reg-cta .btn { width: 100%; } }
   .reg-art { display: flex; justify-content: center; }
-  @media (max-width: 899px) { .reg-art { display: none; } }
+  .reg-art-m { display: none; }
+  @media (max-width: 899px) {
+    .reg-art { display: none; }
+    .reg-art-m { display: flex; justify-content: center; margin: 4px 0 30px; }
+    .reg-art-m .reg-ticket { max-width: 270px; }
+  }
   .reg-ticket {
     position: relative; width: 100%; max-width: 300px; padding: 26px 22px 22px; border-radius: 22px; text-align: center;
     background: #f7f7f7; color: #0d0d0d; transform: rotate(-4deg);
@@ -537,6 +542,17 @@
         <p class="eyebrow-label"><span class="n">01</span>Check In</p>
         <h2>Check in to <span class="reg-word">Soundcheck</span></h2>
         <p class="reg-lead">Every guest gets a <b>raffle number</b> for the on-stage draw. Want the Immersive Audio Experience? Book your slot while you check in.</p>
+        <div class="reg-art-m" aria-hidden="true">
+          <div class="reg-ticket">
+            <span class="rt-label">Raffle number</span>
+            <span class="rt-no">SC-&middot;&middot;&middot;</span>
+            <span class="rt-pill">Your slot</span>
+            <span class="rt-cut"></span>
+            <span class="rt-name">Your name</span>
+            <span class="rt-co">Your company</span>
+            <span class="rt-ev">Soundcheck 2026 &middot; Wharfedale Pro Week Dubai</span>
+          </div>
+        </div>
         <ol class="reg-steps">
           <li><span class="reg-i">1</span><div><b>Your details</b><small>Name, company, email and phone</small></div></li>
           <li><span class="reg-i">2</span><div><b>Book a slot <em>optional</em></b><small>Immersive Audio Experience</small></div></li>
