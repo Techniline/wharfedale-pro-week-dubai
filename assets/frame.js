@@ -90,8 +90,9 @@
     }
   }
 
-  /** Returns a Promise of { dataUrl, w, h } for the branded JPEG. */
-  window.makeSoundcheckFrame = function (photo) {
+  /** Returns a Promise of { dataUrl, w, h } for the branded JPEG. `when` (optional,
+   *  ms) stamps a past date and time instead of now, for re-framing older photos. */
+  window.makeSoundcheckFrame = function (photo, when) {
     return loadAssets().then(function (a) {
       var logo = a[0], tl = a[1];
       var nw = photo.naturalWidth, nh = photo.naturalHeight;
@@ -174,7 +175,7 @@
 
       // ---- right block: "14 OCT 2026 / 10:43 PM", HOSTED BY, Techniline
       var dot = String.fromCharCode(183); // middle dot, kept as a code so the file stays ASCII
-      var meta = dubaiStamp(new Date(), '  ' + dot + '  ');
+      var meta = dubaiStamp(when ? new Date(when) : new Date(), '  ' + dot + '  ');
       var hSize = W * (portrait ? 0.016 : 0.0115), mSize = hSize * 1.05;
       var tlh = W * (portrait ? 0.032 : 0.024), tlw = tlh * tl.naturalWidth / tl.naturalHeight;
       var right = W - pad, gap = W * 0.008;
