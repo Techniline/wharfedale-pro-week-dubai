@@ -17,7 +17,7 @@
  * guest uploads, new Cloudinary photos are copied into the Drive "Framed"
  * folder. Deleting a photo on the approval page removes its Drive copy too.
  *
- * Slot booking (register.html): guests register and get a raffle number
+ * Slot booking (register.html): guests register and get a Guest Pass number
  * (SC-001, SC-002, ...) in order, optionally booking an Immersive Audio
  * Experience slot (slots 1-3 hold 35 each, slot 4 is open).
  * Bookings run one at a time under a lock, so a slot can never go past its
@@ -44,11 +44,11 @@ var CLOUD_ID = /^(soundcheck\/)?[A-Za-z0-9_-]{6,64}$/; // Cloudinary public IDs 
 
 var SLOT_COUNT = 4;     // Immersive Audio Experience slots
 var SLOT_CAPS = [35, 35, 35, 0]; // seats per slot; 0 = open, no limit
-var RAFFLE_PREFIX = 'SC-';
-var RAFFLE_WINNERS = 2; // winners in the on-stage draw
-var REG = 'R_';         // Script Property prefix: one entry per booking, by raffle number
-var REG_EMAIL = 'RE_';  // email -> raffle number (stops repeat bookings)
-var REG_PHONE = 'RP_';  // phone -> raffle number
+var PASS_PREFIX = 'SC-';
+var DRAW_WINNERS = 2; // winners in the stage draw
+var REG = 'R_';         // Script Property prefix: one entry per booking, by pass number
+var REG_EMAIL = 'RE_';  // email -> pass number (stops repeat bookings)
+var REG_PHONE = 'RP_';  // phone -> pass number
 var SLOTS_CACHE_KEY = 'slots';
 var SHEET_NAME = 'Soundcheck Registrations';
 
@@ -76,7 +76,7 @@ function doGet(e) {
     if (p.action === 'regs') {
       checkPin_(p.pin);
       syncBookingsSheet();
-      return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_(), skipped: skipped_(), maxWinners: RAFFLE_WINNERS });
+      return json_({ ok: true, regs: allRegs_().sort(function (a, b) { return a.n - b.n; }), slots: slotState_(), open: isRegOpen_(), winners: winners_(), skipped: skipped_(), maxWinners: DRAW_WINNERS });
     }
     if (p.action === 'admin') {
       checkPin_(p.pin);
@@ -310,21 +310,21 @@ function book_(body) {
   if (company.length < 2) throw new Error('Enter your company name.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error('Enter a valid email address.');
   if (!phone) throw new Error('Enter a valid phone number.');
-  // 0 = raffle only (no Immersive Audio slot)
+  // 0 = Guest Pass only (no Immersive Audio slot)
   if (!(slot >= 0 && slot <= SLOT_COUNT && slot % 1 === 0)) throw new Error('Choose a slot.');
 
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(25000)) throw new Error('Lots of people are booking right now. Please tap Book again.');
   try {
     var props = PropertiesService.getScriptProperties();
-    // The same person can only ever hold one raffle number
+    // The same person can only ever hold one pass number
     var byEmail = props.getProperty(REG_EMAIL + email), byPhone = props.getProperty(REG_PHONE + phone);
     if (byEmail || byPhone) {
       var mine = byEmail && byPhone && byEmail === byPhone ? getReg_(byEmail) : null;
       if (mine) return { ok: true, existing: true, ticket: ticket_(mine) };
       throw new Error(byEmail
-        ? 'This email is already registered. Each guest gets one raffle number.'
-        : 'This phone number is already registered. Each guest gets one raffle number.');
+        ? 'This email is already registered. Each guest gets one Guest Pass.'
+        : 'This phone number is already registered. Each guest gets one Guest Pass.');
     }
     if (!isRegOpen_()) throw new Error('Registration is closed.');
     var taken = counts_();
@@ -351,11 +351,11 @@ function book_(body) {
 }
 
 function ticket_(r) {
-  return { no: raffleNo_(r.n), slot: r.s, name: r.name, company: r.co };
+  return { no: passNo_(r.n), slot: r.s, name: r.name, company: r.co };
 }
 
-function raffleNo_(n) {
-  return RAFFLE_PREFIX + ('00' + n).slice(-3);
+function passNo_(n) {
+  return PASS_PREFIX + ('00' + n).slice(-3);
 }
 
 // Admin: open or close registration
@@ -370,7 +370,7 @@ function isRegOpen_() {
   return PropertiesService.getScriptProperties().getProperty('REG_OPEN') !== '0';
 }
 
-// Admin: cancel a booking. The seat is freed; the raffle number is never reused.
+// Admin: cancel a booking. The seat is freed; the pass number is never reused.
 function regDelete_(body) {
   checkPin_(body.pin);
   var lock = LockService.getScriptLock();
@@ -393,7 +393,7 @@ function regDelete_(body) {
   }
 }
 
-// Raffle draw screen: remember winners so nobody is drawn twice. A winner who
+// Stage draw screen: remember winners so nobody is drawn twice. A winner who
 // isn't in the room can be skipped: they leave the winners and stay out of the draw.
 function winner_(body) {
   checkPin_(body.pin);
@@ -407,7 +407,7 @@ function winner_(body) {
   } else {
     if (!getReg_(n)) throw new Error('Booking not found');
     if (list.indexOf(n) < 0) {
-      if (list.length >= RAFFLE_WINNERS) throw new Error('Both winners have already been drawn.');
+      if (list.length >= DRAW_WINNERS) throw new Error('Both winners have already been drawn.');
       list.push(n);
     }
   }
@@ -463,7 +463,7 @@ function getSheet_() {
   DriveApp.getFileById(ss.getId()).moveTo(getFolder_());
   var sh = ss.getSheets()[0];
   sh.setName('Bookings');
-  sh.appendRow(['Raffle no', 'Slot', 'Name', 'Company', 'Email', 'Phone', 'Booked at (Dubai)', 'Status']);
+  sh.appendRow(['Pass no', 'Slot', 'Name', 'Company', 'Email', 'Phone', 'Booked at (Dubai)', 'Status']);
   sh.getRange(1, 1, 1, 8).setFontWeight('bold');
   sh.setFrozenRows(1);
   props.setProperty('REG_SHEET_ID', ss.getId());
@@ -483,9 +483,9 @@ function syncBookingsSheet() {
     props.setProperty('SHEET_DIRTY', '0'); // a booking made during the write marks it again
     var winners = winners_();
     var rows = allRegs_().sort(function (a, b) { return a.n - b.n; }).map(function (r) {
-      return [raffleNo_(r.n), r.s ? 'Slot ' + r.s : 'Raffle only', r.name, r.co, r.em, "'" + r.ph,
+      return [passNo_(r.n), r.s ? 'Slot ' + r.s : 'No slot', r.name, r.co, r.em, "'" + r.ph,
         Utilities.formatDate(new Date(r.t), 'Asia/Dubai', 'yyyy-MM-dd HH:mm:ss'),
-        winners.indexOf(r.n) >= 0 ? 'Raffle winner' : 'Booked'];
+        winners.indexOf(r.n) >= 0 ? 'Winner' : 'Booked'];
     });
     var sh = getSheet_();
     var old = sh.getLastRow() - 1;
