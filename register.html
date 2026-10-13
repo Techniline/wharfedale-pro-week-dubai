@@ -5,9 +5,9 @@
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
-<title>Register · Soundcheck</title>
+<title>Check In · Soundcheck</title>
 <meta name="description" content="Book your slot for the Immersive Audio Experience at Soundcheck, Wharfedale Pro Week Dubai.">
-<meta property="og:title" content="Register · Soundcheck 2026">
+<meta property="og:title" content="Check In · Soundcheck 2026">
 <meta property="og:description" content="Immersive Audio Experience · Wharfedale Pro Week · Dubai">
 <meta property="og:image" content="https://soundcheck.techniline.org/assets/og-image.png?v=4">
 <link rel="icon" type="image/png" href="assets/favicon.png?v=2">
@@ -131,7 +131,7 @@
     <a href="./"><img class="logo" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro" width="667" height="540"></a>
     <div class="wordmark">Soundcheck</div>
     <div class="year">2026</div>
-    <h1>Register <em>now</em></h1>
+    <h1>Check <em>In</em></h1>
     <p class="sub">Wharfedale Pro Week · Dubai</p>
   </header>
 
@@ -169,7 +169,7 @@
         <legend>Book a slot for the Immersive Audio Experience? <b>*</b></legend>
         <div class="choice-row">
           <label class="opt"><input type="radio" name="want" value="yes" id="want-yes"><span>Yes, book a slot</span></label>
-          <label class="opt"><input type="radio" name="want" value="no" id="want-no"><span>No, just register</span></label>
+          <label class="opt"><input type="radio" name="want" value="no" id="want-no"><span>No, just check in</span></label>
         </div>
         <p class="msg" id="want-msg"></p>
       </fieldset>
@@ -183,9 +183,9 @@
       </div>
       <div class="hp" aria-hidden="true"><label>Website <input id="website" tabindex="-1" autocomplete="off"></label></div>
 
-      <button class="btn btn-primary" id="submit" type="submit">Register</button>
+      <button class="btn btn-primary" id="submit" type="submit">Check In</button>
       <p class="form-err" id="form-err" role="alert" hidden></p>
-      <p class="consent">Every guest gets one raffle number. We use your details only to manage your registration for this event.</p>
+      <p class="consent">Every guest gets one raffle number. We use your details only to manage your check-in for this event.</p>
     </form>
   </section>
 
@@ -212,7 +212,7 @@
       </button>
       <a class="btn btn-ghost" href="./">Back to Soundcheck</a>
     </div>
-    <button class="link" id="another" type="button">Register another guest</button>
+    <button class="link" id="another" type="button">Check in another guest</button>
   </section>
 
   <footer class="foot"><a href="./">Hosted by <img src="assets/techniline.png" alt="Techniline" width="472" height="84"></a></footer>
@@ -259,7 +259,7 @@ function applySlots(list, open) {
   $("closed").hidden = true; form.hidden = false;
   // every slot full: guests can still register for the raffle
   $("want-yes").disabled = !avail.length;
-  if (!avail.length && wantSlot() === "yes") { $("want-no").checked = true; onWant(); setMsg("want", "All slots are now full. You can still register for the raffle."); }
+  if (!avail.length && wantSlot() === "yes") { $("want-no").checked = true; onWant(); setMsg("want", "All slots are now full. You can still check in for the raffle."); }
 
   sel.options[0].textContent = "Select an available slot";
   var keep = sel.value;
@@ -331,7 +331,7 @@ function onWant() {
   if (!busy) btn.textContent = buttonLabel();
   $("form-err").hidden = true;
 }
-function buttonLabel() { return wantSlot() === "yes" ? "Book my slot" : wantSlot() === "no" ? "Get my raffle number" : "Register"; }
+function buttonLabel() { return "Check In"; }
 document.querySelectorAll('input[name="want"]').forEach(function (r) { r.addEventListener("change", onWant); });
 
 // ---------------------------------------------------------------- booking
@@ -367,14 +367,14 @@ function send(payload, attempt) {
     .catch(function () {
       if (attempt < 1) { send(payload, attempt + 1); return; }
       setBusy(false);
-      formError("We couldn't reach the registration system. Check your connection and tap " + buttonLabel() + " again.");
+      formError("We couldn't reach the check-in system. Check your connection and tap " + buttonLabel() + " again.");
     });
 }
 
 function setBusy(on) {
   busy = on;
   btn.setAttribute("aria-busy", on ? "true" : "false");
-  btn.innerHTML = on ? '<span class="spin"></span>' + (wantSlot() === "yes" ? "Booking your slot…" : "Registering…") : buttonLabel();
+  btn.innerHTML = on ? '<span class="spin"></span>' + "Checking you in…" : buttonLabel();
   $("form-err").hidden = true;
 }
 function formError(m) { var el = $("form-err"); el.textContent = m; el.hidden = false; }
@@ -391,7 +391,7 @@ function showTicket(t, existing) {
     : "Keep your <b>raffle number</b> for the on-stage draw.";
   $("t-name").textContent = t.name;
   $("t-co").textContent = t.company;
-  $("done-eyebrow").textContent = existing ? "You're already registered" : t.slot ? "You're booked" : "You're registered";
+  $("done-eyebrow").textContent = existing ? "You're already checked in" : "You're checked in";
   $("done-title").textContent = "See you there, " + t.name.split(" ")[0];
   $("form-card").hidden = true;
   $("done").hidden = false;
