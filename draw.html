@@ -416,7 +416,8 @@ function reset() {
   post({ action: "winner", reset: true }).then(function () {
     winners = []; skipped = []; current = null; $("redraw").hidden = true;
     document.body.classList.remove("won");
-    reels.forEach(function (r) { r.el.classList.remove("locked"); });
+    // back to SC-000, ready for winner 1
+    reels.forEach(function (r) { r.state = "idle"; r.vel = 0; r.pos = 0; r.el.classList.remove("locked", "fast"); paintReel(r); });
     $("who").className = "who"; $("who").innerHTML = "<p class='hint'>Press <kbd>Space</kbd> or <b>Draw</b> to pick a winner</p>";
     addLog({ at: new Date(), reset: true });
     render(); toast("Draw reset");
