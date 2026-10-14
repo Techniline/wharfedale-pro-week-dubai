@@ -45,6 +45,7 @@
   .col { position: relative; display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; background: rgba(6,6,6,0.88); border: 1px solid rgba(255,255,255,0.10); }
   .col-head { flex: none; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--cyan); color: #04161b; }
   .col-head b { font: 900 42px/1 'Poppins', sans-serif; text-transform: uppercase; }
+  .col-head b small { font-size: 20px; font-weight: 800; letter-spacing: 1px; opacity: 0.75; margin-left: 6px; }
   .col-head span { font: 800 22px 'Manrope', sans-serif; white-space: nowrap; }
   .col-head i { font-style: normal; font-size: 17px; opacity: 0.75; margin-left: 8px; }
   .col-body { position: relative; flex: 1; }
@@ -75,7 +76,7 @@
       <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
       <div class="wordmark">Soundcheck<small>2026</small></div>
     </div>
-    <div class="title"><b>Immersive Audio Experience</b><span>Find your name · your slot</span></div>
+    <div class="title"><b>Immersive Audio Experience</b><span>Find your name · 15-minute slots</span></div>
   </header>
   <section class="cols" id="cols"></section>
 </main>
@@ -104,7 +105,7 @@ function build(slots) {
     var col = document.createElement("article");
     col.className = "col";
     col.innerHTML = "<div class='col-head'><b></b><span></span></div><div class='col-body'></div>";
-    col.querySelector("b").textContent = "Slot " + s.n;
+    col.querySelector("b").innerHTML = "Slot " + s.n + " <small>15 min</small>";
     box.appendChild(col);
     return { n: s.n, el: col, body: col.querySelector(".col-body"), pages: [], page: 0, key: "" };
   });

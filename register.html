@@ -180,7 +180,7 @@
         <p class="msg" id="phone-msg"></p>
       </div>
       <fieldset class="field" id="want">
-        <legend>Book a slot for the Immersive Audio Experience? <b>*</b></legend>
+        <legend>Book a 15-minute slot for the Immersive Audio Experience? <b>*</b></legend>
         <div class="choice-row">
           <label class="opt"><input type="radio" name="want" value="yes" id="want-yes"><span>Yes, book a slot</span></label>
           <label class="opt"><input type="radio" name="want" value="no" id="want-no"><span>No, just check in</span></label>
@@ -250,6 +250,7 @@ var DOT = String.fromCharCode(183);
 var $ = function (id) { return document.getElementById(id); };
 var form = $("form"), sel = $("slot"), btn = $("submit");
 var slots = [], busy = false, ticket = null;
+var SLOT_MIN = 15; // each Immersive Audio Experience slot lasts 15 minutes
 function wantSlot() { var c = document.querySelector('input[name="want"]:checked'); return c ? c.value : ""; }
 function isOpenSlot(s) { return s.left === null || s.left === undefined; }
 
@@ -293,7 +294,7 @@ function applySlots(list, open) {
   avail.forEach(function (s) {
     var o = document.createElement("option");
     o.value = s.n;
-    o.textContent = "Slot " + s.n + "  " + DOT + "  " + (isOpenSlot(s) ? "open" : s.left + (s.left === 1 ? " seat left" : " seats left"));
+    o.textContent = "Slot " + s.n + " (" + SLOT_MIN + " min)  " + DOT + "  " + (isOpenSlot(s) ? "open" : s.left + (s.left === 1 ? " seat left" : " seats left"));
     sel.appendChild(o);
   });
   if (keep && avail.some(function (s) { return String(s.n) === keep; })) sel.value = keep;
@@ -411,7 +412,7 @@ function showTicket(t, existing) {
   save("sc-ticket", t);
   setBusy(false);
   $("t-no").textContent = t.no;
-  $("t-slot").textContent = t.slot ? "Slot " + t.slot : "Raffle entry";
+  $("t-slot").textContent = t.slot ? "Slot " + t.slot + " " + DOT + " " + SLOT_MIN + " min" : "Raffle entry";
   $("note").innerHTML = t.slot
     ? "Show this at the Immersive Audio Experience. Save it to your phone: you'll need to <b>show this ticket to claim your gift</b>."
     : "Save it to your phone: you'll need to <b>show this ticket to claim your gift</b>.";
@@ -463,7 +464,7 @@ function ticketImage() {
   spaced(g, "RAFFLE NUMBER", W / 2, y + 110, 7);
   g.fillStyle = "#0d0d0d"; g.font = "900 " + fit(g, ticket.no, "Poppins, Manrope, sans-serif", 180, w - 100, "900 ") + "px Poppins, Manrope, sans-serif";
   g.fillText(ticket.no, W / 2, y + 300);
-  var pill = ticket.slot ? "SLOT " + ticket.slot : "RAFFLE ENTRY", pw = ticket.slot ? 260 : 380;
+  var pill = ticket.slot ? "SLOT " + ticket.slot + " " + DOT + " " + SLOT_MIN + " MIN" : "RAFFLE ENTRY", pw = ticket.slot ? 400 : 380;
   g.fillStyle = "#0d0d0d"; round(g, W / 2 - pw / 2, y + 360, pw, 70, 35); g.fill();
   g.fillStyle = "#0dc0df"; g.font = "800 32px Manrope, sans-serif";
   spaced(g, pill, W / 2, y + 407, 5);
