@@ -17,7 +17,7 @@
     --hair: rgba(255,255,255,0.10); --hair-strong: rgba(255,255,255,0.18);
     --cyan: #0dc0df; --cyan-soft: #86e3f4; --cyan-2: #0a9fc0; --teal: #019298;
     --red: #ff8a95; --gold: #ffd666; --ease: cubic-bezier(.2,.7,.2,1);
-    --cell: clamp(96px, 21vh, 250px);
+    --cell: 250px;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -37,13 +37,18 @@
   .lock a { color: var(--dim); font-size: 13px; }
 
   /* ---------- stage ---------- */
-  .stage { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 2.6vh 3vw; isolation: isolate; }
+  html.cursor-off, html.cursor-off * { cursor: none !important; }
+  /* operator buttons fade away on the wall while the mouse is still; Space still draws */
+  .controls { transition: opacity .5s; }
+  html.cursor-off .controls { opacity: 0; pointer-events: none; }
+  /* fixed 1920 x 960 canvas (2:1 LED wall), scaled by assets/screen.js */
+  .stage { position: fixed; left: 0; top: 0; width: 1920px; height: 960px; transform-origin: 0 0; overflow: hidden; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; display: grid; grid-template-rows: auto 1fr auto; padding: 25px 57.6px; isolation: isolate; }
   .spot { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.13), rgba(0,0,0,0.0) 60%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.75)); transition: opacity .6s; }
   body.won .spot { background: radial-gradient(48% 52% at 50% 46%, rgba(13,192,223,0.26), rgba(0,0,0,0.0) 62%), radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.78)); }
 
   /* soft stage-light beams sweeping behind the machine (GPU-only: transform + opacity) */
   .beams { position: absolute; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
-  .beam { position: absolute; left: 50%; top: 46%; width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; border-radius: 50%; opacity: 0.35; transition: opacity 1.2s ease; will-change: transform;
+  .beam { position: absolute; left: 50%; top: 46%; width: 3456px; height: 3456px; margin: -1728px 0 0 -1728px; border-radius: 50%; opacity: 0.35; transition: opacity 1.2s ease; will-change: transform;
     background: conic-gradient(from 0deg, transparent 0deg, rgba(13,192,223,0.16) 8deg, transparent 18deg, transparent 90deg, rgba(1,146,152,0.14) 98deg, transparent 108deg, transparent 180deg, rgba(13,192,223,0.12) 188deg, transparent 198deg, transparent 270deg, rgba(134,227,244,0.10) 278deg, transparent 288deg);
     -webkit-mask-image: radial-gradient(closest-side, #000 15%, transparent 72%); mask-image: radial-gradient(closest-side, #000 15%, transparent 72%);
     animation: sweep 48s linear infinite; }
@@ -54,21 +59,21 @@
   body.won .beam { opacity: 0.9; }
 
   .top { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-  .brand { display: flex; align-items: center; gap: 1.6vw; }
-  .brand img { height: clamp(40px, 7vh, 84px); }
-  .wm { font: 900 clamp(26px, 5.4vh, 64px)/0.92 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: -0.01em; }
+  .brand { display: flex; align-items: center; gap: 30.7px; }
+  .brand img { height: 67.2px; }
+  .wm { font: 900 51.8px/0.92 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: -0.01em; }
   .wm small { display: block; font-size: 0.42em; font-weight: 800; color: var(--grey); margin-top: 0.12em; }
-  .host { font-size: clamp(10px, 1.3vh, 13px); font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
-  .host img { height: clamp(16px, 2.6vh, 28px); }
+  .host { font-size: 12.5px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
+  .host img { height: 25px; }
   .demo-tag { margin-left: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(255,214,102,0.12); border: 1px solid rgba(255,214,102,0.4); color: var(--gold); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; }
 
   .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; }
-  .eyebrow { font-size: clamp(12px, 1.9vh, 20px); font-weight: 800; letter-spacing: 0.32em; text-transform: uppercase; color: var(--cyan); min-height: 1.4em; }
-  .title { font: 800 clamp(26px, 5.4vh, 60px)/1.05 'Poppins', sans-serif; margin: 1.2vh 0 3vh; }
+  .eyebrow { font-size: 18.2px; font-weight: 800; letter-spacing: 0.32em; text-transform: uppercase; color: var(--cyan); min-height: 1.4em; }
+  .title { font: 800 51.8px/1.05 'Poppins', sans-serif; margin: 11.5px 0 28.8px; }
   .title em { font-style: normal; color: var(--cyan); }
 
   /* ---------- reels ---------- */
-  .machine { position: relative; display: flex; align-items: center; gap: clamp(6px, 1vw, 16px); padding: clamp(14px, 2.4vh, 28px) clamp(18px, 2.6vw, 40px); border-radius: 28px; background: linear-gradient(180deg, rgba(20,20,20,0.92), rgba(6,6,6,0.95)); border: 1px solid rgba(13,192,223,0.35); box-shadow: 0 40px 100px -40px rgba(13,192,223,0.55), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .machine { position: relative; display: flex; align-items: center; gap: 16px; padding: 23px 40px; border-radius: 28px; background: linear-gradient(180deg, rgba(20,20,20,0.92), rgba(6,6,6,0.95)); border: 1px solid rgba(13,192,223,0.35); box-shadow: 0 40px 100px -40px rgba(13,192,223,0.55), inset 0 1px 0 rgba(255,255,255,0.06); }
   .machine::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--cyan), var(--teal), transparent); }
   .prefix { font: 900 calc(var(--cell) * 0.62)/1 'Poppins', sans-serif; color: var(--grey); padding-right: 0.08em; }
   .reel { position: relative; width: calc(var(--cell) * 0.64); height: var(--cell); overflow: hidden; border-radius: 16px; background: linear-gradient(180deg, #050505, #141414 50%, #050505); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 18px 24px -12px rgba(0,0,0,0.9), inset 0 -18px 24px -12px rgba(0,0,0,0.9); }
@@ -84,12 +89,12 @@
   @keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 
   /* ---------- winner card ---------- */
-  .who { min-height: clamp(110px, 17vh, 210px); margin-top: 3.2vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-  .who .hint { color: var(--faint); font-size: clamp(13px, 1.8vh, 18px); margin: 0; }
+  .who { min-height: 163.2px; margin-top: 30.7px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .who .hint { color: var(--faint); font-size: 17.3px; margin: 0; }
   .who .hint kbd { font: 800 0.9em 'Manrope', sans-serif; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--hair-strong); color: var(--dim); }
-  .who .name { font: 800 clamp(30px, 6.6vh, 78px)/1.05 'Poppins', sans-serif; text-shadow: 0 0 40px rgba(13,192,223,0.35); }
-  .who .co { margin-top: 1.2vh; font-size: clamp(14px, 2.4vh, 28px); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cyan); }
-  .who .tag { margin-top: 1.4vh; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--hair-strong); color: var(--dim); font-size: clamp(11px, 1.6vh, 16px); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+  .who .name { font: 800 63.4px/1.05 'Poppins', sans-serif; text-shadow: 0 0 40px rgba(13,192,223,0.35); }
+  .who .co { margin-top: 11.5px; font-size: 23px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cyan); }
+  .who .tag { margin-top: 13.4px; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--hair-strong); color: var(--dim); font-size: 15.4px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
   .who.show > * { animation: rise .7s var(--ease) both; }
   .who.show .co { animation-delay: .12s; } .who.show .tag { animation-delay: .24s; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } }
@@ -97,7 +102,7 @@
   /* ---------- bottom bar ---------- */
   .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
   .winners { display: flex; gap: 10px; flex-wrap: wrap; max-width: 60%; }
-  .winners > span { display: inline-flex; align-items: center; gap: 10px; font-size: clamp(12px, 1.6vh, 16px); font-weight: 800; padding: 8px 14px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.32); color: var(--gold); }
+  .winners > span { display: inline-flex; align-items: center; gap: 10px; font-size: 15.4px; font-weight: 800; padding: 8px 14px; border-radius: 999px; background: rgba(255,214,102,0.10); border: 1px solid rgba(255,214,102,0.32); color: var(--gold); }
   .winners b { color: var(--ink); font-weight: 700; }
   .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .pool { font-size: 13px; color: var(--faint); margin-right: 6px; white-space: nowrap; }
@@ -110,7 +115,7 @@
   .icon-btn { width: 42px; padding: 0; display: inline-grid; place-items: center; }
 
   /* draw log */
-  .log { position: fixed; right: 3vw; bottom: 11vh; width: min(460px, 92vw); max-height: 52vh; overflow: auto; z-index: 15; padding: 16px 18px; border-radius: 18px; background: rgba(8,8,8,0.96); border: 1px solid var(--hair-strong); font-size: 12.5px; color: var(--dim); }
+  .log { position: fixed; right: 57.6px; bottom: 105.6px; width: min(460px, 1766.4px); max-height: 499.2px; overflow: auto; z-index: 15; padding: 16px 18px; border-radius: 18px; background: rgba(8,8,8,0.96); border: 1px solid var(--hair-strong); font-size: 12.5px; color: var(--dim); }
   .log h4 { margin: 0 0 10px; font: 800 14px 'Poppins', sans-serif; color: var(--ink); }
   .log .row { padding: 9px 0; border-top: 1px solid var(--hair); line-height: 1.5; }
   .log code { font-size: 11px; color: var(--faint); word-break: break-all; }
@@ -118,7 +123,6 @@
 
   canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; background: rgba(12,12,12,0.96); border: 1px solid rgba(13,192,223,0.35); font-size: 14px; z-index: 40; }
-  @media (max-width: 760px) { .bottom { flex-direction: column; align-items: stretch; } .winners { max-width: none; } .controls { justify-content: center; } .host { display: none; } }
   @media (prefers-reduced-motion: reduce) { .beam { animation: none; } }
 </style>
 </head>
@@ -135,7 +139,7 @@
   </form>
 </section>
 
-<main class="stage" id="stage" hidden>
+<main class="stage screen" id="stage" hidden>
   <div class="spot"></div>
   <div class="beams" aria-hidden="true"><div class="beam"></div><div class="beam b2"></div></div>
 
@@ -153,7 +157,7 @@
     <h1 class="title" id="title">And the winner <em>is</em></h1>
     <div class="machine" id="machine">
       <span class="prefix">SC-</span>
-      <div id="reels" style="display:flex;gap:clamp(6px,0.8vw,12px)"></div>
+      <div id="reels" style="display:flex;gap:12px"></div>
       <div class="flash"></div>
     </div>
     <div class="who" id="who"><p class="hint">Press <kbd>Space</kbd> or <b>Draw</b> to pick a winner</p></div>
@@ -183,6 +187,7 @@
 <canvas class="confetti" id="confetti"></canvas>
 <div class="toast" id="toast" hidden></div>
 
+<script src="assets/screen.js"></script>
 <script>
 var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
 var DEMO = /[?&]demo=1\b/.test(location.search);
@@ -501,15 +506,12 @@ document.addEventListener("keydown", function (e) {
   if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); draw(); }
   else if (e.key === "m" || e.key === "M") $("sound").click();
   else if (e.key === "l" || e.key === "L") $("logbtn").click();
-  else if (e.key === "f" || e.key === "F") {
-    if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
-    else document.exitFullscreen();
-  }
 });
 window.addEventListener("resize", function () { reels.forEach(paintReel); });
 
 function start() {
   $("lock").hidden = true; $("stage").hidden = false;
+  window.fitScreen();
   paintSound(); paintLog(); render();
   reels.forEach(paintReel); // reel height is only known once the stage is visible
   if (!DEMO) setInterval(function () { if (!busy) load().catch(function () {}); }, 30000);

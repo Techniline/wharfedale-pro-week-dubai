@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0b0b">
+<title>Soundcheck · QR screen</title>
+<link rel="icon" type="image/png" href="assets/favicon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] { --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080; --grey: #d9d9d9; --cyan: #0dc0df; --teal: #019298; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050505; color: var(--ink); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+  html.cursor-off, html.cursor-off * { cursor: none !important; }
+
+  /* fixed 1920 x 960 canvas (2:1 LED wall), scaled by assets/screen.js */
+  .screen { position: fixed; left: 0; top: 0; width: 1920px; height: 960px; transform-origin: 0 0; overflow: hidden;
+    background: radial-gradient(900px 640px at 76% 50%, rgba(13,192,223,0.22), transparent 70%), radial-gradient(1200px 900px at 20% 40%, rgba(0,0,0,0.55), transparent 70%), #0b0b0b url("assets/grille.svg"); background-size: auto, auto, 34px 22px; }
+  .screen::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, var(--cyan), var(--teal)); }
+
+  .left { position: absolute; left: 120px; top: 92px; width: 860px; }
+  .logo { height: 112px; display: block; margin-bottom: 34px; }
+  .wm { font: 900 128px/0.9 'Poppins', sans-serif; color: var(--cyan); letter-spacing: -2px; text-transform: uppercase; margin-left: -6px; }
+  .yr { font: 800 70px/1 'Poppins', sans-serif; color: var(--grey); margin-top: 10px; }
+  h1 { font: 800 68px/1.05 'Poppins', sans-serif; margin: 58px 0 0; }
+  h1 em { font-style: normal; color: var(--cyan); }
+  .lines { margin-top: 26px; font-size: 30px; line-height: 1.5; color: var(--dim); font-weight: 700; }
+  .lines b { color: var(--ink); }
+  .host { position: absolute; left: 120px; bottom: 74px; display: flex; align-items: center; gap: 22px; font-size: 20px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; color: var(--faint); }
+  .host img { height: 44px; }
+
+  .qr { position: absolute; right: 120px; top: 78px; width: 740px; height: 740px; padding: 34px; border-radius: 44px; background: #fff;
+    box-shadow: 0 0 0 10px rgba(13,192,223,0.45), 0 0 120px 10px rgba(13,192,223,0.35); }
+  .qr img { display: block; width: 100%; height: 100%; }
+  .scan { position: absolute; right: 120px; top: 846px; width: 740px; text-align: center; }
+  .scan b { display: block; font: 800 34px 'Poppins', sans-serif; }
+  .scan span { display: block; margin-top: 4px; font-size: 22px; font-weight: 700; color: var(--cyan); letter-spacing: 1px; }
+  .pulse { position: absolute; right: 120px; top: 78px; width: 740px; height: 740px; border-radius: 44px; border: 4px solid var(--cyan); opacity: 0; animation: ring 2.8s ease-out infinite; pointer-events: none; }
+  @keyframes ring { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 0; transform: scale(1.08); } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+</style>
+</head>
+<body>
+<main class="screen">
+  <section class="left">
+    <img class="logo" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+    <div class="wm">Soundcheck</div>
+    <div class="yr">2026</div>
+    <h1 id="h1">Scan to <em>check in</em></h1>
+    <div class="lines" id="lines"><b>Every guest gets a raffle number</b> for the on-stage draw.<br>Book your Immersive Audio Experience slot.</div>
+  </section>
+  <div class="host">Hosted by <img src="assets/techniline.png" alt="Techniline"></div>
+  <div class="pulse" aria-hidden="true"></div>
+  <div class="qr"><img id="qr" src="assets/qr-checkin.svg" alt="QR code"></div>
+  <div class="scan"><b>Scan with your phone camera</b><span id="url">soundcheck.techniline.org/register.html</span></div>
+</main>
+<script src="assets/screen.js"></script>
+<script>
+// ?qr=site shows the website QR instead of check-in
+if (/[?&]qr=site\b/.test(location.search)) {
+  document.getElementById('qr').src = 'assets/qr-site.svg';
+  document.getElementById('h1').innerHTML = 'Explore <em>Soundcheck</em>';
+  document.getElementById('lines').innerHTML = "<b>Tonight's programme, live photo album and more.</b><br>Check in for your raffle number and Immersive Audio slot.";
+  document.getElementById('url').textContent = 'soundcheck.techniline.org';
+}
+</script>
+</body>
+</html>

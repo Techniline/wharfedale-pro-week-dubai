@@ -3,67 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="referrer" content="no-referrer">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b0b0b">
 <title>Soundcheck · Slot list</title>
 <link rel="icon" type="image/png" href="assets/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
-    --bg: #0b0b0b; --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080; --grey: #d9d9d9;
-    --hair: rgba(255,255,255,0.10); --hair-strong: rgba(255,255,255,0.18);
-    --cyan: #0dc0df; --cyan-2: #0a9fc0; --teal: #019298; --tint: rgba(13,192,223,0.10); --red: #ff8a95;
-  }
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] { --ink: #f5f5f5; --dim: #b5b5b5; --faint: #808080; --grey: #d9d9d9; --cyan: #0dc0df; --teal: #019298; --red: #ff8a95; --ease: cubic-bezier(.2,.7,.2,1); }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body { margin: 0; color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050505; color: var(--ink); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+  html.cursor-off, html.cursor-off * { cursor: none !important; }
   [hidden] { display: none !important; }
 
-  .lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,0.6); }
+  /* PIN (outside the canvas, plain full window) */
+  .lock { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #0b0b0b url("assets/grille.svg"); background-size: 34px 22px; }
   .lock form { width: 100%; max-width: 340px; text-align: center; }
   .lock .wm { font: 900 44px 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; }
   .lock p { color: var(--dim); font-size: 14px; margin: 14px 0; }
-  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid var(--hair-strong); background: rgba(0,0,0,0.5); color: var(--ink); }
+  .lock input { width: 100%; text-align: center; font: 600 26px 'Manrope', sans-serif; letter-spacing: 0.4em; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.5); color: var(--ink); }
   .lock input:focus { outline: none; border-color: var(--cyan); }
   .lock button { width: 100%; margin-top: 12px; min-height: 52px; border: 0; border-radius: 999px; background: var(--cyan); color: #04161b; font: 800 16px 'Manrope', sans-serif; cursor: pointer; }
   .lock .err { color: var(--red); font-size: 13px; min-height: 20px; margin: 10px 0 0; }
 
-  .board { height: 100%; display: grid; grid-template-rows: auto 1fr; padding: 2.4vh 2.4vw 2.6vh; gap: 2vh; }
-  .top { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-  .brand { display: flex; align-items: center; gap: 2vw; }
-  .brand img.wp { height: clamp(44px, 8vh, 92px); }
-  .wordmark { font: 900 clamp(32px, 6.4vh, 76px)/0.95 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: -0.01em; }
-  .wordmark small { display: block; font-size: 0.42em; font-weight: 800; color: var(--grey); letter-spacing: 0.02em; margin-top: 0.15em; }
+  /* fixed 1920 x 960 canvas (2:1 LED wall), scaled by assets/screen.js */
+  .screen { position: fixed; left: 0; top: 0; width: 1920px; height: 960px; transform-origin: 0 0; overflow: hidden; background: radial-gradient(1400px 500px at 50% 0%, rgba(13,192,223,0.10), transparent 70%), #0b0b0b url("assets/grille.svg"); background-size: auto, 34px 22px; }
+  .screen::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, var(--cyan), var(--teal)); }
+
+  .top { position: absolute; left: 60px; right: 60px; top: 34px; height: 110px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 30px; }
+  .brand img { height: 92px; }
+  .wordmark { font: 900 74px/0.9 'Poppins', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: -1px; }
+  .wordmark small { display: block; font-size: 34px; font-weight: 800; color: var(--grey); margin-top: 6px; letter-spacing: 0; }
   .title { text-align: right; }
-  .title b { display: block; font: 800 clamp(18px, 3.4vh, 40px) 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.02em; }
-  .title span { display: block; margin-top: 0.4vh; font-size: clamp(11px, 1.6vh, 18px); font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--teal); }
-  .title img { height: clamp(16px, 2.6vh, 30px); margin-top: 1.2vh; }
+  .title b { display: block; font: 800 42px/1.05 'Poppins', sans-serif; text-transform: uppercase; }
+  .title span { display: block; margin-top: 8px; font-size: 21px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; color: var(--cyan); }
 
-  .cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; min-height: 0; }
-  .col { display: flex; flex-direction: column; min-height: 0; border-radius: 18px; background: rgba(10,10,10,0.82); border: 1px solid var(--hair); overflow: hidden; }
-  .col-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 1.6vh 1.2vw; background: var(--cyan); color: #04161b; }
-  .col-head b { font: 900 clamp(20px, 3.6vh, 44px)/1 'Poppins', sans-serif; text-transform: uppercase; }
-  .col-head span { font: 800 clamp(12px, 1.9vh, 22px) 'Manrope', sans-serif; white-space: nowrap; }
-  .col-body { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-  .list { list-style: none; margin: 0; padding: 0.6vh 0; }
-  .list li { display: grid; grid-template-columns: auto 1fr; gap: 0 0.8vw; align-items: baseline; padding: 0.55vh 1.2vw; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .list .num { font: 800 clamp(11px, 1.55vh, 18px) 'Manrope', sans-serif; color: var(--faint); min-width: 1.6em; text-align: right; }
-  .list .nm { font: 700 clamp(13px, 2.15vh, 26px)/1.2 'Poppins', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .list .co { grid-column: 2; font-size: clamp(10px, 1.45vh, 16px); font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .list li.new .nm { color: var(--cyan); }
-  .empty { padding: 3vh 1.2vw; color: var(--faint); font-size: clamp(13px, 1.9vh, 20px); }
-  .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 6vh; background: linear-gradient(transparent, rgba(10,10,10,0.95)); pointer-events: none; }
-
-  @media (max-width: 900px) {
-    html, body { height: auto; }
-    .board { height: auto; }
-    .cols { grid-template-columns: 1fr 1fr; }
-    .col-body { max-height: 60vh; overflow: auto; }
-  }
-  @media (max-width: 560px) { .cols { grid-template-columns: 1fr; } .title { display: none; } }
+  .cols { position: absolute; left: 50px; right: 50px; top: 172px; height: 752px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .col { position: relative; display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; background: rgba(6,6,6,0.88); border: 1px solid rgba(255,255,255,0.10); }
+  .col-head { flex: none; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--cyan); color: #04161b; }
+  .col-head b { font: 900 42px/1 'Poppins', sans-serif; text-transform: uppercase; }
+  .col-head span { font: 800 22px 'Manrope', sans-serif; white-space: nowrap; }
+  .col-head i { font-style: normal; font-size: 17px; opacity: 0.75; margin-left: 8px; }
+  .col-body { position: relative; flex: 1; }
+  .page { position: absolute; inset: 0; padding: 12px 16px 18px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(18, 1fr); column-gap: 14px; opacity: 0; transition: opacity .9s var(--ease); }
+  .page.on { opacity: 1; }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .row .num { flex: none; width: 26px; text-align: right; font: 800 14px 'Manrope', sans-serif; color: var(--faint); }
+  .row .nm { min-width: 0; font: 800 19px/1.3 'Manrope', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row.new .nm { color: var(--cyan); }
+  .none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); font-size: 22px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -78,24 +69,21 @@
   </form>
 </section>
 
-<main class="board" id="board" hidden>
+<main class="screen" id="board" hidden>
   <header class="top">
     <div class="brand">
-      <img class="wp" src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
+      <img src="assets/wharfedale-pro.svg" alt="Wharfedale Pro">
       <div class="wordmark">Soundcheck<small>2026</small></div>
     </div>
-    <div class="title">
-      <b>Immersive Audio Experience</b>
-      <span>Find your name · your slot</span>
-      <img src="assets/techniline.png" alt="Techniline">
-    </div>
+    <div class="title"><b>Immersive Audio Experience</b><span>Find your name · your slot</span></div>
   </header>
   <section class="cols" id="cols"></section>
 </main>
 
+<script src="assets/screen.js"></script>
 <script>
 var API = "https://script.google.com/macros/s/AKfycbxynfYEE2qiB1HFxrS-oyTYoNgV9NBKwyCXXEfTjQGxCkDrTJCgZFntyVSmqNgWF-Y/exec";
-var DOT = String.fromCharCode(183);
+var PER_PAGE = 36, PAGE_MS = 8000;   // two columns of 18 names per slot; longer lists page through
 var pin = "", seen = null, cols = [];
 var $ = function (id) { return document.getElementById(id); };
 function store(k, v) { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
@@ -111,58 +99,68 @@ function load() {
 }
 
 function build(slots) {
-  var box = $("cols");
-  box.innerHTML = "";
+  var box = $("cols"); box.innerHTML = "";
   cols = slots.map(function (s) {
     var col = document.createElement("article");
     col.className = "col";
-    col.innerHTML = "<div class='col-head'><b></b><span></span></div><div class='col-body'><ul class='list'></ul><div class='fade' hidden></div></div>";
+    col.innerHTML = "<div class='col-head'><b></b><span></span></div><div class='col-body'></div>";
     col.querySelector("b").textContent = "Slot " + s.n;
     box.appendChild(col);
-    return { n: s.n, el: col, body: col.querySelector(".col-body"), list: col.querySelector(".list"), fade: col.querySelector(".fade"), pos: 0, wait: 60 };
+    return { n: s.n, el: col, body: col.querySelector(".col-body"), pages: [], page: 0, key: "" };
   });
 }
 
 function render(slots, regs) {
   if (cols.length !== slots.length) build(slots);
-  var fresh = seen ? regs.filter(function (r) { return !seen[r.n]; }) : [];
-  seen = {};
-  regs.forEach(function (r) { seen[r.n] = 1; });
+  var fresh = {};
+  if (seen) regs.forEach(function (r) { if (!seen[r.n]) fresh[r.n] = 1; });
+  seen = {}; regs.forEach(function (r) { seen[r.n] = 1; });
   slots.forEach(function (s, i) {
     var c = cols[i];
     var people = regs.filter(function (r) { return r.s === s.n; })
       .sort(function (a, b) { return a.name.localeCompare(b.name); });
     var open = s.left === null || s.left === undefined;
-    c.el.querySelector(".col-head span").textContent = open ? people.length + " booked" : people.length + " / " + s.cap;
-    c.list.innerHTML = "";
-    if (!people.length) {
-      var e = document.createElement("li"); e.className = "empty"; e.textContent = "No bookings yet"; c.list.appendChild(e);
+    var key = people.map(function (r) { return r.n + (fresh[r.n] ? "*" : ""); }).join(",");
+    if (key === c.key) return paintHead(c, s, people.length, open); // nothing changed
+    c.key = key;
+    c.body.innerHTML = "";
+    if (!people.length) { c.body.innerHTML = "<div class='none'>No bookings yet</div>"; c.pages = []; }
+    var pages = [];
+    for (var p = 0; p < people.length; p += PER_PAGE) {
+      var page = document.createElement("div"); page.className = "page";
+      people.slice(p, p + PER_PAGE).forEach(function (r, k) {
+        var row = document.createElement("div"); row.className = "row" + (fresh[r.n] ? " new" : "");
+        row.innerHTML = "<span class='num'></span><span class='nm'></span>";
+        row.querySelector(".num").textContent = p + k + 1;
+        row.querySelector(".nm").textContent = r.name;
+        page.appendChild(row);
+      });
+      c.body.appendChild(page); pages.push(page);
     }
-    people.forEach(function (r, k) {
-      var li = document.createElement("li");
-      if (fresh.some(function (f) { return f.n === r.n; })) li.className = "new";
-      li.innerHTML = "<span class='num'></span><span class='nm'></span><span class='co'></span>";
-      li.querySelector(".num").textContent = k + 1;
-      li.querySelector(".nm").textContent = r.name;
-      li.querySelector(".co").textContent = r.co;
-      c.list.appendChild(li);
-    });
+    c.pages = pages;
+    if (c.page >= pages.length) c.page = 0;
+    if (pages.length) pages[c.page].classList.add("on");
+    paintHead(c, s, people.length, open);
   });
 }
 
-// Long lists scroll gently on their own, pausing at the top and bottom
-function tick() {
+function paintHead(c, s, count, open) {
+  var span = c.el.querySelector(".col-head span");
+  span.textContent = open ? count + " booked" : count + " / " + s.cap;
+  if (c.pages.length > 1) {
+    var i = document.createElement("i"); i.textContent = (c.page + 1) + "/" + c.pages.length; span.appendChild(i);
+  }
+}
+
+// Lists longer than one page fade to the next page every few seconds
+function turnPages() {
   cols.forEach(function (c) {
-    var max = c.list.scrollHeight - c.body.clientHeight;
-    c.fade.hidden = max <= 0;
-    if (max <= 0 || window.innerWidth <= 900) { c.list.style.transform = ""; c.pos = 0; return; }
-    if (c.wait > 0) { c.wait--; return; }
-    if (c.back) { c.pos = 0; c.back = false; c.wait = 90; } // back to the top after a pause at the bottom
-    else {
-      c.pos += 0.5;
-      if (c.pos >= max) { c.pos = max; c.wait = 90; c.back = true; }
-    }
-    c.list.style.transform = "translateY(" + (-c.pos) + "px)";
+    if (c.pages.length < 2) return;
+    c.pages[c.page].classList.remove("on");
+    c.page = (c.page + 1) % c.pages.length;
+    c.pages[c.page].classList.add("on");
+    var i = c.el.querySelector(".col-head i");
+    if (i) i.textContent = (c.page + 1) + "/" + c.pages.length;
   });
 }
 
@@ -171,8 +169,9 @@ function unlock(p) {
   return load().then(function () {
     store("sc-pin", pin);
     $("lock").hidden = true; $("board").hidden = false;
+    window.fitScreen();
     setInterval(function () { load().catch(function () {}); }, 15000);
-    setInterval(tick, 33);
+    setInterval(turnPages, PAGE_MS);
   });
 }
 $("pin-form").addEventListener("submit", function (e) {
